@@ -33,4 +33,11 @@
 
 Use the UniFi `Servers` network for homelab infrastructure. Keep DHCP reservations, static leases, and DNS records aligned with this table.
 
-The next network milestone is ingress/load balancer setup for `192.168.40.30`.
+Ingress uses MetalLB to assign `192.168.40.30` to the Traefik `LoadBalancer` Service. Service hostnames should use the `*.lab.home.arpa` convention.
+
+Initial DNS records:
+
+| Hostname | Address |
+|---|---:|
+| `argocd.lab.home.arpa` | `192.168.40.30` |
+| `nginx-test.lab.home.arpa` | `192.168.40.30` |

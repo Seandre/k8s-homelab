@@ -181,6 +181,37 @@ KUBECONFIG=~/.kube/k8s-homelab.yaml kubectl -n argocd get secret argocd-initial-
   -o jsonpath='{.data.password}' | base64 -d
 ```
 
+## Ingress
+
+Ingress is managed by the homelab infrastructure application at `kubernetes/clusters/homelab/infrastructure`.
+
+Components:
+
+- MetalLB assigns the reserved ingress VIP `192.168.40.30`.
+- Traefik runs in the `traefik` namespace and exposes ports `80` and `443` through a `LoadBalancer` Service.
+- Argo CD is exposed at `http://argocd.lab.home.arpa`.
+- A simple nginx test app is exposed at `http://nginx-test.lab.home.arpa`.
+
+Create UniFi DNS records for `argocd.lab.home.arpa` and `nginx-test.lab.home.arpa` pointing at `192.168.40.30`.
+
+Validation commands:
+
+```bash
+KUBECONFIG=~/.kube/k8s-homelab.yaml kubectl -n metallb-system rollout status deployment/controller
+KUBECONFIG=~/.kube/k8s-homelab.yaml kubectl -n metallb-system rollout status daemonset/speaker
+KUBECONFIG=~/.kube/k8s-homelab.yaml kubectl -n traefik rollout status deployment/traefik
+KUBECONFIG=~/.kube/k8s-homelab.yaml kubectl -n traefik get svc traefik
+KUBECONFIG=~/.kube/k8s-homelab.yaml kubectl get ingressclass
+KUBECONFIG=~/.kube/k8s-homelab.yaml kubectl get ingress -A
+curl -H 'Host: nginx-test.lab.home.arpa' http://192.168.40.30/
+```
+
+Argo CD is configured with `server.insecure: "true"` so Traefik can route internal HTTP before cert-manager is installed. Restart `argocd-server` after the first ingress sync if the setting is not picked up immediately:
+
+```bash
+KUBECONFIG=~/.kube/k8s-homelab.yaml kubectl -n argocd rollout restart deployment/argocd-server
+```
+
 ## Network Troubleshooting Note
 
 During VM setup, SSH appeared to flap across Proxmox and Kubernetes nodes while ping stayed healthy. The cause was UniFi UDM Pro Intrusion Prevention affecting TCP/22 traffic. For future troubleshooting, check UDM Pro security features when ICMP works but SSH times out.
