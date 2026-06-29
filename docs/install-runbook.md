@@ -33,7 +33,7 @@
 - [x] Run Kubernetes node prep on all nodes
 - [x] Remove temporary passwordless sudo and return to password-required sudo
 - [x] Install k3s control plane
-- [ ] Join k3s workers
+- [x] Join k3s workers
 - [ ] Add Argo CD
 - [ ] Add ingress
 - [ ] Add cert-manager
@@ -116,6 +116,32 @@ Validation completed on the control node:
 The workstation kubeconfig was fetched to `~/.kube/k8s-homelab.yaml` and rewritten to use `https://192.168.40.21:6443`.
 
 Temporary passwordless sudo was removed from `k8s-control-01` after installation, and `sudo -n true` again requires interactive authentication.
+
+## k3s Worker Join
+
+The worker nodes were joined to the k3s cluster:
+
+- `k8s-worker-01` (`192.168.40.22`)
+- `k8s-worker-02` (`192.168.40.23`)
+
+Join commands used:
+
+```bash
+curl -sfL https://get.k3s.io | K3S_URL=https://192.168.40.21:6443 K3S_TOKEN='<TOKEN>' sh -s - agent \
+  --node-ip 192.168.40.22
+
+curl -sfL https://get.k3s.io | K3S_URL=https://192.168.40.21:6443 K3S_TOKEN='<TOKEN>' sh -s - agent \
+  --node-ip 192.168.40.23
+```
+
+Validation completed:
+
+- `k8s-control-01`, `k8s-worker-01`, and `k8s-worker-02` reported `Ready`
+- all nodes are running k3s `v1.36.2+k3s1`
+- `k3s-agent` is `active` and `enabled` on both workers
+- workstation `kubectl get nodes -o wide` using `~/.kube/k8s-homelab.yaml` succeeded
+
+Temporary passwordless sudo was removed from all three Kubernetes nodes after the worker join, and `sudo -n true` again requires interactive authentication.
 
 ## Network Troubleshooting Note
 

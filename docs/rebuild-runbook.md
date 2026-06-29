@@ -33,9 +33,11 @@ This lab should be reproducible. Anything important should live in Git or be doc
 
 ## Current Next Steps
 
-1. Join k3s workers
-2. Verify all Kubernetes nodes are Ready
-3. Commit the working milestone
+1. Commit the working three-node k3s milestone
+2. Add Argo CD
+3. Add ingress
+4. Add cert-manager
+5. Add monitoring
 
 ## Ubuntu Template Notes
 
@@ -116,3 +118,34 @@ chmod 600 ~/.kube/k8s-homelab.yaml
 ```
 
 Current build status: k3s server `v1.36.2+k3s1` is installed on `k8s-control-01`, the node reports `Ready`, core system pods are running, workstation `kubectl` access using `~/.kube/k8s-homelab.yaml` succeeds, bundled Traefik and ServiceLB are disabled, and temporary passwordless sudo has been removed from the control node. Worker join is the next milestone.
+
+## k3s Worker Join
+
+Read the node token from the control plane:
+
+```bash
+sudo cat /var/lib/rancher/k3s/server/node-token
+```
+
+Join `k8s-worker-01`:
+
+```bash
+curl -sfL https://get.k3s.io | K3S_URL=https://192.168.40.21:6443 K3S_TOKEN='<TOKEN>' sh -s - agent \
+  --node-ip 192.168.40.22
+```
+
+Join `k8s-worker-02`:
+
+```bash
+curl -sfL https://get.k3s.io | K3S_URL=https://192.168.40.21:6443 K3S_TOKEN='<TOKEN>' sh -s - agent \
+  --node-ip 192.168.40.23
+```
+
+Validate:
+
+```bash
+kubectl get nodes -o wide
+kubectl get pods -A
+```
+
+Current build status: `k8s-control-01`, `k8s-worker-01`, and `k8s-worker-02` are `Ready` on k3s `v1.36.2+k3s1`. `k3s-agent` is active and enabled on both workers, workstation `kubectl` access succeeds, and temporary passwordless sudo has been removed from all three Kubernetes nodes.
