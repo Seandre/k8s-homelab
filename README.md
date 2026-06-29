@@ -7,14 +7,15 @@ Kubernetes homelab built on Proxmox VE.
 - Host: HP EliteDesk 800 G6 Mini
 - CPU: Intel Core i5-10500T
 - RAM: 64 GB
-- Installed SSD: 2 TB NVMe
-- Previous SSD: 256 GB
+- Boot/system disk: 256 GB NVMe
+- VM/data disk: 2 TB NVMe
 - Hypervisor: Proxmox VE
 
 ## Goal
 
-Build a reproducible Kubernetes homelab for platform engineering practice.
-Initial stack:
+Build a reproducible Kubernetes homelab for platform engineering and GitOps workflows.
+
+Target stack:
 
 - Proxmox VE
 - Ubuntu Server VMs
@@ -27,14 +28,51 @@ Initial stack:
 
 ## Current Status
 
-- 64 GB RAM installed
-- 2 TB NVMe installed
-- Proxmox VE installed on the HP EliteDesk mini PC
+- Proxmox VE installed on the 256 GB NVMe in the HP EliteDesk mini PC
 - 2 TB NVMe configured as Proxmox LVM-thin storage `vmdata`
 - UniFi `Servers` network on VLAN ID `40` selected for homelab infrastructure
-- Clients added in UniFi based on MAC address, set to static IPs and dns entries added
 - Proxmox host reachable at `192.168.40.20`
-- Kubernetes control-plane and worker VMs cloned and networked
-- Worker nodes are set up
+- Kubernetes VMs cloned, resized, networked, and prepared
+- Three-node k3s cluster is running:
+  - `k8s-control-01` at `192.168.40.21`
+  - `k8s-worker-01` at `192.168.40.22`
+  - `k8s-worker-02` at `192.168.40.23`
+- Workstation kubeconfig lives at `~/.kube/k8s-homelab.yaml`
+- Argo CD is installed in the `argocd` namespace
+- Argo CD is currently accessed with `kubectl port-forward` because ingress is not installed yet
 - UniFi UDM Pro Intrusion Prevention was identified as the cause of intermittent SSH/TCP timeouts and adjusted
-- Next step: install the k3s control plane and join workers
+- Next step: add ingress
+
+## Repo Map
+
+- `docs/`: hardware, network, install, rebuild, decision, and troubleshooting notes
+- `proxmox/`: Proxmox storage and VM layout notes
+- `ansible/`: inventory and playbooks for node prep and k3s operations
+- `kubernetes/clusters/homelab/`: cluster bootstrap manifests, currently including Argo CD
+
+## Common Commands
+
+Check cluster nodes:
+
+```bash
+KUBECONFIG=~/.kube/k8s-homelab.yaml kubectl get nodes -o wide
+```
+
+Check Argo CD:
+
+```bash
+KUBECONFIG=~/.kube/k8s-homelab.yaml kubectl -n argocd get pods
+```
+
+Access Argo CD locally:
+
+```bash
+KUBECONFIG=~/.kube/k8s-homelab.yaml kubectl -n argocd port-forward svc/argocd-server 8080:443
+```
+
+Get the initial Argo CD admin password:
+
+```bash
+KUBECONFIG=~/.kube/k8s-homelab.yaml kubectl -n argocd get secret argocd-initial-admin-secret \
+  -o jsonpath='{.data.password}' | base64 -d
+```

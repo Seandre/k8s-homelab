@@ -33,11 +33,11 @@ This lab should be reproducible. Anything important should live in Git or be doc
 
 ## Current Next Steps
 
-1. Commit the Argo CD bootstrap milestone
-2. Add ingress
-3. Add cert-manager
-4. Add monitoring
-5. Deploy first real app
+1. Add ingress
+2. Add cert-manager
+3. Add monitoring
+4. Deploy first real app
+5. Validate end-to-end access through the future ingress VIP
 
 ## Ubuntu Template Notes
 

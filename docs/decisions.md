@@ -13,5 +13,5 @@
 | TBD | Use the separate 2 TB NVMe as Proxmox LVM-thin storage named `vmdata` | Keeps VM disks and Kubernetes workloads off the boot disk |
 | TBD | Use UniFi Servers / Homelab network on VLAN ID `40` | Keep homelab infrastructure grouped on the dedicated `192.168.40.0/24` network |
 | 2026-06-28 | Treat UniFi UDM Pro Intrusion Prevention as part of SSH troubleshooting | IPS can allow ICMP while intermittently timing out TCP/22, which looks like Proxmox or VM instability unless checked early |
-| TBD | Use Argo CD later | GitOps practice for platform engineering |
+| TBD | Use Argo CD for GitOps bootstrap | Provides a GitOps control plane for managing future cluster services |
 | TBD | Resize Ubuntu VM disks with LVM after Proxmox disk expansion | Ubuntu Server template disks use LVM, so expanded VM disks need `growpart`, `pvresize`, and `lvextend` inside the guest |
