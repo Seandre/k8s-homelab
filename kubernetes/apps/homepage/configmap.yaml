@@ -1,0 +1,55 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: homepage
+  namespace: homepage
+  labels:
+    app.kubernetes.io/name: homepage
+data:
+  settings.yaml: |
+    title: Homelab
+    theme: dark
+    color: slate
+    headerStyle: clean
+    layout:
+      Infrastructure:
+        style: row
+        columns: 3
+      Apps:
+        style: row
+        columns: 3
+  services.yaml: |
+    - Infrastructure:
+        - Argo CD:
+            href: https://argocd.lab.home.arpa
+            description: GitOps control plane
+            icon: argo-cd.png
+        - Grafana:
+            href: https://grafana.lab.home.arpa
+            description: Cluster dashboards
+            icon: grafana.png
+        - Proxmox:
+            href: https://192.168.40.20:8006
+            description: Virtualization host
+            icon: proxmox.png
+    - Apps:
+        - nginx test:
+            href: https://nginx-test.lab.home.arpa
+            description: Ingress test app
+            icon: nginx.png
+  bookmarks.yaml: |
+    - Homelab:
+        - Repository:
+            - abbr: GH
+              href: https://github.com/Seandre/k8s-homelab
+        - Homepage Docs:
+            - abbr: HP
+              href: https://gethomepage.dev/
+  widgets.yaml: |
+    - search:
+        provider: duckduckgo
+        target: _blank
+  kubernetes.yaml: ""
+  docker.yaml: ""
+  custom.css: ""
+  custom.js: ""

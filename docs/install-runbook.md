@@ -38,7 +38,7 @@
 - [x] Add ingress
 - [x] Add cert-manager
 - [x] Add monitoring
-- [ ] Deploy first real app
+- [x] Deploy first real app
 
 ## VM Disk Resize Procedure
 
@@ -332,6 +332,48 @@ Troubleshooting notes:
 - If Grafana's certificate is ready but HTTPS returns `404 page not found`, confirm the Grafana ingress has the Traefik `websecure` and `router.tls` annotations.
 - If `grafana.lab.home.arpa` does not resolve, test through the VIP directly with `curl -k -I --resolve grafana.lab.home.arpa:443:192.168.40.30 https://grafana.lab.home.arpa`.
 - Grafana browser certificate warnings are expected until the lab root CA is trusted by the client device.
+
+## Homepage
+
+Homepage is managed by the `homelab-apps` application from `kubernetes/clusters/homelab/apps.yaml`.
+
+Components:
+
+- Homepage image `ghcr.io/gethomepage/homepage:v1.13.2`.
+- Curated app and infrastructure links from a ConfigMap.
+- No Kubernetes auto-discovery or service-account RBAC yet.
+- Homepage ingress exposed through Traefik at `https://home.lab.home.arpa`.
+- Homepage TLS certificate issued by the `homelab-ca` ClusterIssuer.
+
+Current status: Homepage is the first real app deployed through the apps layer. It should be reachable at `https://home.lab.home.arpa` after DNS points that hostname to the ingress VIP `192.168.40.30`.
+
+Create a UniFi DNS record for `home.lab.home.arpa` pointing at `192.168.40.30`.
+
+Validation commands:
+
+```bash
+kubectl -n argocd get application homelab-apps
+kubectl -n homepage get pods
+kubectl -n homepage get svc
+kubectl -n homepage get ingress
+kubectl get certificate -n homepage
+curl -k -I https://home.lab.home.arpa
+```
+
+Expected results:
+
+- `homelab-apps` reports `Synced` and `Healthy`.
+- The Homepage pod reports `Running`.
+- The Homepage service exposes port `3000`.
+- Homepage ingress has host `home.lab.home.arpa`.
+- `homepage-tls` reports `Ready=True`.
+- The HTTPS probe returns `HTTP/2 200`.
+
+Troubleshooting notes:
+
+- If `home.lab.home.arpa` does not resolve, test through the VIP directly with `curl -k -I --resolve home.lab.home.arpa:443:192.168.40.30 https://home.lab.home.arpa`.
+- If the pod fails readiness with host validation errors, confirm `HOMEPAGE_ALLOWED_HOSTS` includes `home.lab.home.arpa` and the pod IP form used by the health probe.
+- Homepage browser certificate warnings are expected until the lab root CA is trusted by the client device.
 
 ## Network Troubleshooting Note
 
