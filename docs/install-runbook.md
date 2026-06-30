@@ -372,8 +372,33 @@ Expected results:
 Troubleshooting notes:
 
 - If `home.lab.home.arpa` does not resolve, test through the VIP directly with `curl -k -I --resolve home.lab.home.arpa:443:192.168.40.30 https://home.lab.home.arpa`.
+- If Safari returns `404 page not found`, confirm the URL is `https://home.lab.home.arpa`; the Homepage ingress only listens on Traefik's `websecure` entrypoint.
 - If the pod fails readiness with host validation errors, confirm `HOMEPAGE_ALLOWED_HOSTS` includes `home.lab.home.arpa` and the pod IP form used by the health probe.
+- If the pod enters `CrashLoopBackOff`, start with the previous container logs:
+
+```bash
+kubectl -n homepage get pods
+kubectl -n homepage describe pod -l app.kubernetes.io/name=homepage
+kubectl -n homepage logs deployment/homepage --previous --tail=120
+kubectl -n homepage exec deployment/homepage -- ls -la /app/config
+```
+
+Homepage `v1.13.2` requires `/app/config/proxmox.yaml` to exist even when the Proxmox API integration is not configured. The first deployment mounted individual ConfigMap files into `/app/config` but did not provide `proxmox.yaml`, so Homepage tried to copy its skeleton file into the ConfigMap-backed directory and crashed with:
+
+```text
+Failed to initialize required config: /app/config/proxmox.yaml
+Reason: EACCES: permission denied, copyfile '/app/src/skeleton/proxmox.yaml' -> '/app/config/proxmox.yaml'
+Hint: Make /app/config writable or manually place the config file.
+```
+
+The fix was to add an empty `proxmox.yaml` key to the Homepage ConfigMap and mount it at `/app/config/proxmox.yaml`.
 - Homepage browser certificate warnings are expected until the lab root CA is trusted by the client device.
+
+Lessons learned:
+
+- `CrashLoopBackOff` is a symptom, not the root cause; use `describe` for lifecycle context and `logs --previous` for the last crashed process.
+- ConfigMap file mounts are not writable application config directories; provide every required config file when an app expects to initialize defaults.
+- Split troubleshooting by layer: DNS resolution, Traefik ingress match, Kubernetes service endpoints, then application config/logs.
 
 ## Network Troubleshooting Note
 
