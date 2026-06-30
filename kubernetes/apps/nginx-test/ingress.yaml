@@ -3,8 +3,15 @@ kind: Ingress
 metadata:
   name: nginx-test
   namespace: nginx-test
+  annotations:
+    cert-manager.io/cluster-issuer: homelab-ca
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
 spec:
   ingressClassName: traefik
+  tls:
+    - hosts:
+        - nginx-test.lab.home.arpa
+      secretName: nginx-test-tls
   rules:
     - host: nginx-test.lab.home.arpa
       http:
