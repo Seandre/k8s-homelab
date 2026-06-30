@@ -43,10 +43,12 @@ Target stack:
 - `homelab-infrastructure` and `homelab-apps` child applications are defined and reconciling
 - MetalLB and Traefik ingress are installed through Argo CD
 - MetalLB assigns the reserved ingress VIP `192.168.40.30`
-- Argo CD is exposed at `http://argocd.lab.home.arpa`
-- The nginx test app is exposed at `http://nginx-test.lab.home.arpa`
+- cert-manager is installed through Argo CD
+- Internal TLS certificates are issued by the `homelab-ca` ClusterIssuer
+- Argo CD is exposed at `https://argocd.lab.home.arpa`
+- The nginx test app is exposed at `https://nginx-test.lab.home.arpa`
 - UniFi UDM Pro Intrusion Prevention was identified as the cause of intermittent SSH/TCP timeouts and adjusted
-- Next step: add cert-manager
+- Next step: add monitoring
 
 ## Repo Map
 
@@ -62,7 +64,7 @@ The cluster is moving from workstation-driven `kubectl apply` toward GitOps:
 
 1. Keep GitHub as the source of truth for now.
 2. Let Argo CD reconcile cluster infrastructure and apps from `kubernetes/clusters/homelab`.
-3. Add cert-manager so internal services can move from HTTP/self-signed access toward managed TLS.
+3. Use cert-manager's internal CA issuer for lab HTTPS certificates.
 4. Add monitoring and a first real app through Argo CD.
 5. Add a utility/admin VM after the core GitOps path is stable, so cluster administration can happen from inside the homelab network.
 
@@ -92,7 +94,7 @@ KUBECONFIG=~/.kube/k8s-homelab.yaml kubectl -n argocd port-forward svc/argocd-se
 Access Argo CD through ingress:
 
 ```bash
-open http://argocd.lab.home.arpa
+open https://argocd.lab.home.arpa
 ```
 
 Get the initial Argo CD admin password:

@@ -36,7 +36,7 @@
 - [x] Join k3s workers
 - [x] Add Argo CD
 - [x] Add ingress
-- [ ] Add cert-manager
+- [x] Add cert-manager
 - [ ] Add monitoring
 - [ ] Deploy first real app
 
@@ -241,6 +241,53 @@ Argo CD is configured with `server.insecure: "true"` so Traefik can route intern
 ```bash
 KUBECONFIG=~/.kube/k8s-homelab.yaml kubectl -n argocd rollout restart deployment/argocd-server
 ```
+
+## cert-manager
+
+cert-manager is managed by the homelab infrastructure application at `kubernetes/clusters/homelab/infrastructure`.
+
+Components:
+
+- cert-manager `v1.20.3` is installed from the pinned upstream release manifest.
+- `homelab-selfsigned` bootstraps the lab root CA certificate.
+- `homelab-root-ca` stores the internal CA in the `cert-manager` namespace.
+- `homelab-ca` is the ClusterIssuer used by internal service ingresses.
+- Argo CD and the nginx test app use cert-manager ingress annotations and Traefik TLS routers.
+
+Current status: cert-manager is installed and working. `homelab-ca` is ready, both ingress certificates are ready, Argo CD is reachable at `https://argocd.lab.home.arpa`, and the nginx test app is reachable at `https://nginx-test.lab.home.arpa`.
+
+Validation commands:
+
+```bash
+kubectl -n argocd get application homelab-infrastructure
+kubectl -n cert-manager get pods
+kubectl get clusterissuer
+kubectl get certificate -A
+kubectl describe certificate -n argocd argocd-server-tls
+kubectl describe certificate -n nginx-test nginx-test-tls
+curl -k -I https://argocd.lab.home.arpa
+curl -k -I https://nginx-test.lab.home.arpa
+```
+
+Expected results:
+
+- `homelab-infrastructure` reports `Synced` and `Healthy`.
+- `cert-manager`, `cert-manager-cainjector`, and `cert-manager-webhook` pods are `Running`.
+- `homelab-ca` reports `Ready=True`.
+- `argocd-server-tls` and `nginx-test-tls` report `Ready=True`.
+- Both HTTPS probes return `HTTP/2 200`.
+
+cert-manager has three separate parts to reason about:
+
+- Controller: the cert-manager pods, webhook, CRDs, and reconcilers must be installed first.
+- Issuer: an `Issuer` or `ClusterIssuer` defines how certificates are signed.
+- Certificate: a `Certificate` resource, or an annotated ingress shim, requests a concrete TLS secret.
+
+Troubleshooting notes:
+
+- If Argo CD reports missing cert-manager custom resource types during the first sync, verify `SkipDryRunOnMissingResource=true` is present on the infrastructure application or the cert-manager custom resources.
+- If certificates are ready but Traefik returns `404 page not found` on HTTPS, confirm the ingress has both `traefik.ingress.kubernetes.io/router.entrypoints: websecure` and `traefik.ingress.kubernetes.io/router.tls: "true"`.
+- If Argo CD loops with `307` redirects after TLS is enabled, restart `argocd-server` so it picks up `server.insecure: "true"` from `argocd-cmd-params-cm`.
 
 ## Network Troubleshooting Note
 
