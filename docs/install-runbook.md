@@ -302,9 +302,9 @@ Components:
 - Grafana ingress exposed through Traefik at `https://grafana.lab.home.arpa`.
 - Grafana TLS certificate issued by the `homelab-ca` ClusterIssuer.
 
-Current status: monitoring is installed through Argo CD. Grafana should be reachable at `https://grafana.lab.home.arpa` after DNS points that hostname to the ingress VIP `192.168.40.30`.
+Current status: monitoring is installed through Argo CD. Grafana is exposed at `https://grafana.lab.home.arpa` through the ingress VIP `192.168.40.30`.
 
-Create a UniFi DNS record for `grafana.lab.home.arpa` pointing at `192.168.40.30`.
+The UniFi DNS record for `grafana.lab.home.arpa` should point at `192.168.40.30`.
 
 Validation commands:
 
@@ -345,9 +345,9 @@ Components:
 - Homepage ingress exposed through Traefik at `https://home.lab.home.arpa`.
 - Homepage TLS certificate issued by the `homelab-ca` ClusterIssuer.
 
-Current status: Homepage is the first real app deployed through the apps layer. It should be reachable at `https://home.lab.home.arpa` after DNS points that hostname to the ingress VIP `192.168.40.30`.
+Current status: Homepage is the first real app deployed through the apps layer and is exposed at `https://home.lab.home.arpa` through the ingress VIP `192.168.40.30`.
 
-Create a UniFi DNS record for `home.lab.home.arpa` pointing at `192.168.40.30`.
+The UniFi DNS record for `home.lab.home.arpa` should point at `192.168.40.30`.
 
 Validation commands:
 
@@ -399,6 +399,39 @@ Lessons learned:
 - `CrashLoopBackOff` is a symptom, not the root cause; use `describe` for lifecycle context and `logs --previous` for the last crashed process.
 - ConfigMap file mounts are not writable application config directories; provide every required config file when an app expects to initialize defaults.
 - Split troubleshooting by layer: DNS resolution, Traefik ingress match, Kubernetes service endpoints, then application config/logs.
+
+## KOReader Sync Server
+
+KOReader Sync Server is planned as the next learning workload. This section records the intended v1 design only; it has not been deployed yet.
+
+Planned v1:
+
+- App name: `kosync`.
+- Namespace: `kosync`.
+- Hostname: `kosync.lab.home.arpa`.
+- Image: `koreader/kosync:v2.1.1`.
+- Ingress: Traefik on `websecure` with a cert-manager certificate from the `homelab-ca` ClusterIssuer.
+- Service: route Traefik to the app's HTTP port, target port `17200`; Traefik terminates TLS.
+- Persistence: Redis data persisted with a `local-path` PVC mounted at `/var/lib/redis`.
+- Bootstrap registration: set `ENABLE_USER_REGISTRATION=true` for initial account creation, then change it to `false` after the account exists.
+
+The first deployment should use the upstream all-in-one container before splitting components apart. That keeps the initial exercise focused on ingress, TLS, PVC behavior, app configuration, and operational runbooks.
+
+Limitations:
+
+- `local-path` storage is node-local and is not resilient to losing the node that holds the volume.
+- No backup or restore workflow is in place yet, so the service should not be trusted with important reading progress until restore has been tested.
+- Redis is bundled inside the upstream all-in-one container, which limits independent Redis operations, upgrades, and monitoring.
+- Registration is temporarily open during bootstrap and must be closed after account creation.
+- KOReader clients may need to trust the homelab root CA before connecting to `https://kosync.lab.home.arpa`.
+
+Future improvements:
+
+- Move Redis data to Longhorn or another resilient StorageClass after the storage layer is ready.
+- Add backup and restore testing before relying on the app for important data.
+- Disable registration after account creation and verify new signups are rejected.
+- Add monitoring and alerts for pod health, PVC usage, and failed probes.
+- Later split Redis into its own Kubernetes workload, or use a Redis chart/operator, once the all-in-one deployment is understood.
 
 ## Network Troubleshooting Note
 

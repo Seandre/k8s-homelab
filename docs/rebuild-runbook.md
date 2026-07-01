@@ -33,13 +33,14 @@ This lab should be reproducible. Anything important should live in Git or be doc
 
 ## Current Next Steps
 
-1. Add ingress/load balancer support for the future ingress VIP
-2. Expose Argo CD through ingress so day-to-day access no longer depends on port-forwarding
-3. Add cert-manager
-4. Add monitoring
-5. Deploy first real app
-6. Add a utility/admin VM for stable in-network operations
-7. Validate end-to-end access through the future ingress VIP
+1. Add a persistent storage layer and validate PVC behavior with a small stateful workload
+2. Add KOReader Sync Server (`kosync`) as the next stateful learning workload after recording the plan
+3. Add a backup and restore workflow before relying on stateful services
+4. Choose and document a secrets-management approach
+5. Replace temporary test workloads with real services that exercise ingress, TLS, storage, secrets, and monitoring
+6. Add practical Grafana dashboards and a small number of useful alerts
+7. Practice GitOps rollback, drift correction, node reboot, and upgrade workflows
+8. Add a utility/admin VM for stable in-network operations after the storage and backup path is understood
 
 Do not prioritize self-hosted Git yet. Use GitHub as the durable source of truth while the cluster is still being built. A self-hosted Git service can be added later, ideally mirrored to GitHub, but it should not be required to recover the cluster.
 
@@ -186,7 +187,7 @@ KUBECONFIG=~/.kube/k8s-homelab.yaml kubectl -n argocd get secret argocd-initial-
   -o jsonpath='{.data.password}' | base64 -d
 ```
 
-Current build status: Argo CD `v3.4.4` is installed in the `argocd` namespace, all standard Argo CD pods are running, `argocd-server` is `ClusterIP`, the `homelab` root application reconciles this repo, and ingress is the next milestone.
+Current build status: Argo CD `v3.4.4` is installed in the `argocd` namespace, all standard Argo CD pods are running, `argocd-server` is `ClusterIP`, and the `homelab` root application reconciles this repo. Argo CD is also exposed through Traefik ingress at `https://argocd.lab.home.arpa`.
 
 ## GitOps Target State
 
@@ -203,7 +204,10 @@ Current Argo CD layout:
 - `homelab`: root application for `kubernetes/clusters/homelab`
 - `homelab-infrastructure`: child application for cluster infrastructure manifests
 - `homelab-apps`: child application for workload manifests
+- `homelab-monitoring`: child application for kube-prometheus-stack
 
-Near-term Argo CD work is to add ingress, cert-manager, monitoring, and apps under those child application paths.
+Current GitOps status: `homelab`, `homelab-infrastructure`, `homelab-apps`, and `homelab-monitoring` are `Synced` and `Healthy`. MetalLB, Traefik, cert-manager, monitoring, Homepage, and the nginx test app are managed through Argo CD.
+
+Near-term Argo CD work is to add storage, backup/restore, secrets management, alerts, and real learning workloads under the existing app and infrastructure paths.
 
 The utility/admin VM is still useful, but its job is operational convenience: keep `kubectl`, `helm`, `k9s`, Ansible, SSH keys, and a checkout of this repo on a stable machine inside the homelab network. It should not become the only place where desired state exists.
