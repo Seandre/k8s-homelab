@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kosync
+  namespace: kosync
+  labels:
+    app.kubernetes.io/name: kosync
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: kosync
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: kosync
+    spec:
+      containers:
+        - name: kosync
+          image: koreader/kosync:v2.1.1
+          ports:
+            - name: http
+              containerPort: 17200
+          env:
+            - name: ENABLE_USER_REGISTRATION
+              value: "true"
+          volumeMounts:
+            - name: redis-data
+              mountPath: /var/lib/redis
+      volumes:
+        - name: redis-data
+          persistentVolumeClaim:
+            claimName: kosync-redis
