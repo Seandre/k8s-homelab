@@ -116,9 +116,25 @@ Access Argo CD through ingress:
 open https://argocd.lab.home.arpa
 ```
 
-Get the initial Argo CD admin password:
+Get the Argo CD admin username and initial password:
 
 ```bash
+echo admin
 KUBECONFIG=~/.kube/k8s-homelab.yaml kubectl -n argocd get secret argocd-initial-admin-secret \
   -o jsonpath='{.data.password}' | base64 -d
+```
+
+Access Grafana through ingress:
+
+```bash
+open https://grafana.lab.home.arpa
+```
+
+Get the Grafana admin username and password:
+
+```bash
+KUBECONFIG=~/.kube/k8s-homelab.yaml kubectl -n monitoring get secret kube-prometheus-stack-grafana \
+  -o jsonpath='{.data.admin-user}' | base64 -d
+KUBECONFIG=~/.kube/k8s-homelab.yaml kubectl -n monitoring get secret kube-prometheus-stack-grafana \
+  -o jsonpath='{.data.admin-password}' | base64 -d
 ```

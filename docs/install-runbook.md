@@ -174,9 +174,10 @@ KUBECONFIG=~/.kube/k8s-homelab.yaml kubectl -n argocd port-forward svc/argocd-se
 
 Then open `https://localhost:8080`.
 
-Fetch the initial admin password when needed:
+Fetch the admin username and initial password when needed:
 
 ```bash
+echo admin
 KUBECONFIG=~/.kube/k8s-homelab.yaml kubectl -n argocd get secret argocd-initial-admin-secret \
   -o jsonpath='{.data.password}' | base64 -d
 ```
@@ -317,6 +318,15 @@ kubectl get certificate -n monitoring
 curl -k -I https://grafana.lab.home.arpa
 ```
 
+Fetch the Grafana admin username and password when needed:
+
+```bash
+KUBECONFIG=~/.kube/k8s-homelab.yaml kubectl -n monitoring get secret kube-prometheus-stack-grafana \
+  -o jsonpath='{.data.admin-user}' | base64 -d
+KUBECONFIG=~/.kube/k8s-homelab.yaml kubectl -n monitoring get secret kube-prometheus-stack-grafana \
+  -o jsonpath='{.data.admin-password}' | base64 -d
+```
+
 Expected results:
 
 - `homelab-monitoring` reports `Synced` and `Healthy`.
@@ -416,6 +426,8 @@ Planned v1:
 - Bootstrap registration: set `ENABLE_USER_REGISTRATION=true` for initial account creation, then change it to `false` after the account exists.
 
 The first deployment should use the upstream all-in-one container before splitting components apart. That keeps the initial exercise focused on ingress, TLS, PVC behavior, app configuration, and operational runbooks.
+
+See [KOReader Sync Server Tutorial](koreader-sync-tutorial.md) for the full tutorial, commands, manifests, verification steps, and learning notes.
 
 Limitations:
 

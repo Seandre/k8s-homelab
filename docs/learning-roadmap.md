@@ -81,6 +81,8 @@ KOReader Sync Server is a good first real stateful app for this lab because it i
 
 The planned v1 deployment should use the upstream all-in-one container first, with Redis bundled in the app container and persisted through a `local-path` PVC. That keeps the first deployment focused on understanding the app behavior and the Kubernetes plumbing. Splitting Redis into its own workload, or adopting a Redis chart/operator, should wait until the all-in-one deployment is understood and backup/restore expectations are clearer.
 
+Use [KOReader Sync Server Tutorial](koreader-sync-tutorial.md) for the guided install steps, copyable manifests, verification commands, and follow-up hardening path.
+
 ## Learning Rules
 
 - Every new service should teach at least one platform concept.

@@ -3,3 +3,4 @@ kind: Kustomization
 resources:
   - ../../../apps/nginx-test
   - ../../../apps/homepage
+  - ../../../apps/kosync

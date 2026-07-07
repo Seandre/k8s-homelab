@@ -180,9 +180,10 @@ KUBECONFIG=~/.kube/k8s-homelab.yaml kubectl -n argocd port-forward svc/argocd-se
 
 Open `https://localhost:8080`.
 
-Fetch the initial admin password when needed:
+Fetch the admin username and initial password when needed:
 
 ```bash
+echo admin
 KUBECONFIG=~/.kube/k8s-homelab.yaml kubectl -n argocd get secret argocd-initial-admin-secret \
   -o jsonpath='{.data.password}' | base64 -d
 ```
