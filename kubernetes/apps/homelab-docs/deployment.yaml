@@ -15,9 +15,11 @@ spec:
       labels:
         app.kubernetes.io/name: homelab-docs
     spec:
+      imagePullSecrets:
+        - name: ghcr-pull
       containers:
         - name: docs
-          image: ghcr.io/seandre/k8s-homelab-docs:main
+          image: ghcr.io/seandre/k8s-homelab-docs:sha-abcdef0
           imagePullPolicy: Always
           securityContext:
             allowPrivilegeEscalation: false
