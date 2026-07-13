@@ -298,13 +298,16 @@ Confirm the requested hostname exactly matches `docs.lab.seandre.dev` and the Se
 
 ## Publishing Later Documentation Updates
 
-Each documentation push builds a new immutable `sha-*` image. For a controlled update:
+Each documentation push to `main` automatically builds and deploys a new immutable `sha-*` image:
 
 1. edit the Markdown and validate it with `npm run build` from `docs-site/docusaurus`;
 2. commit and push the documentation;
-3. wait for the image workflow;
-4. copy the new immutable `sha-*` tag into the Deployment;
-5. render the Kustomize layers; and
-6. commit and push the image-tag update.
+3. the image workflow builds and pushes the `main` and immutable `sha-*` tags;
+4. after the image push succeeds, the workflow commits the immutable tag to the Deployment; and
+5. Argo CD detects that commit and rolls out the new static site.
 
-Argo CD will roll out the new static site and keep the previous Git commit and image tag available for rollback.
+The workflow never changes the Deployment when the image build or push fails. Concurrent runs cancel older builds so an older documentation image cannot replace a newer one. A manual rebuild of an image that is already deployed exits without creating an empty commit.
+
+The workflow requires GitHub Actions to have read and write repository permissions. Configure that under **Settings → Actions → General → Workflow permissions** if repository or organization policy does not already allow it.
+
+To roll back, revert the workflow's `deploy docs image sha-*` commit or restore a previous immutable tag in `kubernetes/apps/homelab-docs/deployment.yaml`. Argo CD will deploy the restored image automatically.
