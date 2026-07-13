@@ -37,7 +37,7 @@ Last verified: 2026-06-30.
 - Proxmox VE installed on the 256 GB NVMe in the HP EliteDesk mini PC
 - 2 TB NVMe configured as Proxmox LVM-thin storage `vmdata`
 - UniFi `Servers` network on VLAN ID `40` selected for homelab infrastructure
-- Proxmox host reachable at `192.168.40.20`
+- Proxmox host reachable at `192.168.40.20`; `pve-01.lab.seandre.dev` is the target private management name
 - Kubernetes VMs cloned, resized, networked, and prepared
 - Three-node k3s cluster is running k3s `v1.36.2+k3s1`; all nodes are `Ready`:
   - `k8s-control-01` at `192.168.40.21`

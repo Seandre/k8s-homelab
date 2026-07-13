@@ -32,7 +32,7 @@ Storage identifiers are local to each standalone host. The single-disk `pve-02` 
 | `k8s-control-01` | Active | `pve-01` | 2 | 8 GB | 80 GB | `vmdata` | `192.168.40.21` |
 | `k8s-worker-01` | Active | `pve-01` | 4 | 16 GB | 150 GB | `vmdata` | `192.168.40.22` |
 | `k8s-worker-02` | Active | `pve-01` | 4 | 16 GB | 150 GB | `vmdata` | `192.168.40.23` |
-| `utility-01` | Next project | `pve-01` | 2 | 8 GB | 100 GB | `vmdata` | `192.168.40.24` |
+| `utility-01` | Active | `pve-01` | 2 | 8 GB | 100 GB | `vmdata` | `192.168.40.24` |
 | `bastion-01` | Planned after `pve-02` | `pve-02` | 4 | 12 GB | ~300 GB | `local-lvm` | `192.168.40.33` plus `.29`, `.31` |
 
 Build `utility-01` with [Build 02: Utility Automation Server](../10-build/02-utility-automation-server.md). `bastion-01` is a separate infrastructure dependency providing `dnsmasq`, HAProxy, and Nexus.
@@ -48,6 +48,7 @@ The three `okd-cp-*` hosts are physical, schedulable OKD control-plane nodes rat
 | VLAN ID | `40` |
 | Gateway and DNS | `192.168.40.1` |
 | Internal domain | `lab.home.arpa` |
+| Private public-domain alias zone | `lab.seandre.dev` |
 | Ingress VIP | `192.168.40.30` |
 | OKD API / ingress VIPs | `192.168.40.29` / `192.168.40.31` |
 | Bastion management | `192.168.40.33` |
@@ -60,6 +61,11 @@ Infrastructure names resolve to their host addresses. Kubernetes application nam
 
 | Name | Address |
 |---|---:|
+| `pve-01.lab.seandre.dev` | `192.168.40.20` |
+| `k8s-control-01.lab.seandre.dev` | `192.168.40.21` |
+| `k8s-worker-01.lab.seandre.dev` | `192.168.40.22` |
+| `k8s-worker-02.lab.seandre.dev` | `192.168.40.23` |
+| `utility-01.lab.seandre.dev` | CNAME to `utility-01.lab.home.arpa` (`192.168.40.24`) |
 | `utility-01.lab.home.arpa` | `192.168.40.24` |
 | `pve-02.lab.home.arpa` | `192.168.40.25` |
 | `bastion-01.lab.home.arpa` | `192.168.40.33` |
@@ -86,6 +92,8 @@ Infrastructure names resolve to their host addresses. Kubernetes application nam
 The public-domain rows are private split-DNS records. Cloudflare remains authoritative publicly but contains no homelab A/AAAA records; it is used for ACME TXT challenges. `bastion-01` serves the OKD forward and reverse records, with UniFi conditionally forwarding `okd.lab.seandre.dev` to `.33`.
 
 SSH, Mosh, Proxmox, and optional RDP are internal administration services. They do not belong behind Kubernetes ingress and should not be forwarded from the public internet.
+
+Use `https://pve-01.lab.seandre.dev:8006` for the active Proxmox UI after completing [Operations 04: Proxmox Public TLS](../30-operations/04-proxmox-public-tls.md). Keep the installed Proxmox node name `pve01`; the new FQDN is a DNS and certificate identity, not a node rename.
 
 ## Ubuntu Template and Disk Growth
 

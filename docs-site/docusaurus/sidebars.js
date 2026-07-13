@@ -41,6 +41,7 @@ const sidebars = {
         'operations/rebuild-runbook',
         'operations/troubleshooting',
         'operations/stable-admin-credentials',
+        'operations/proxmox-public-tls',
       ],
     },
   ],

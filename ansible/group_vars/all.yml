@@ -1,12 +1,14 @@
 ---
 timezone: America/Los_Angeles
 lab_domain: lab.home.arpa
+public_lab_domain: lab.seandre.dev
 network_name: Servers
 vlan_id: 40
 gateway: 192.168.40.1
 dns_server: 192.168.40.1
 proxmox_host: pve-01
 proxmox_ip: 192.168.40.20
+proxmox_fqdn: pve-01.lab.seandre.dev
 proxmox_vm_storage: vmdata
 k3s_disable_components:
   - traefik

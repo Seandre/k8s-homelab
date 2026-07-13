@@ -29,7 +29,7 @@ data:
             description: Cluster dashboards
             icon: grafana.png
         - Proxmox:
-            href: https://192.168.40.20:8006
+            href: https://pve-01.lab.seandre.dev:8006
             description: Virtualization host
             icon: proxmox.png
     - Apps:

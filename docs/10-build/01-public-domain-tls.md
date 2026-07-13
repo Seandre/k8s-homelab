@@ -359,7 +359,7 @@ Keep the old `lab.home.arpa` DNS records and `homelab-ca` issuer during a short 
 4. Remove `homelab-root-ca` from clients only if nothing else still uses it.
 5. Retain the private CA manifests until all non-HTTP internal certificate use has been audited.
 
-Do not delete `homelab-root-ca` merely because ingress migrated. Proxmox, SSH, raw IP addresses, and other services are separate trust and naming problems; this tutorial changes only Kubernetes HTTPS ingress certificates.
+Do not delete `homelab-root-ca` merely because ingress migrated. Proxmox, SSH, raw IP addresses, and other services are separate trust and naming problems; this tutorial changes only Kubernetes HTTPS ingress certificates. Continue with [Operations 04: Proxmox Public TLS](../30-operations/04-proxmox-public-tls.md) to add private public-domain aliases for the hypervisor and its VMs and configure Proxmox's native ACME client.
 
 ## Renewal and Recovery Checks
 
