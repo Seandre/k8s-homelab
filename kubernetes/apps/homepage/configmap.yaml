@@ -33,6 +33,10 @@ data:
             description: Virtualization host
             icon: proxmox.png
     - Apps:
+        - Homelab Docs:
+            href: https://docs.lab.seandre.dev
+            description: Infrastructure documentation and runbooks
+            icon: docusaurus.png
         - nginx test:
             href: https://nginx-test.lab.seandre.dev
             description: Ingress test app
