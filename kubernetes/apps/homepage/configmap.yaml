@@ -32,6 +32,12 @@ data:
             href: https://pve-01.lab.seandre.dev:8006
             description: Virtualization host
             icon: proxmox.png
+            widget:
+              type: glances
+              url: http://192.168.40.20:61208
+              version: 4
+              metric: info
+              refreshInterval: 5000
         - UniFi:
             href: https://unifi.ui.com
             description: Network management
