@@ -1,0 +1,36 @@
+---
+- name: Create host state capture directory
+  ansible.builtin.file:
+    path: "{{ hpl_result_root }}/{{ hpl_effective_run_id }}/host-state"
+    state: directory
+    owner: root
+    group: root
+    mode: "0750"
+  delegate_to: "{{ hpl_capture_host }}"
+  become: true
+
+- name: Capture host temperature, governor, load, and swap state
+  ansible.builtin.shell: |
+    set -o errexit -o nounset -o pipefail
+    shopt -s nullglob
+    output={{ (hpl_result_root ~ '/' ~ hpl_effective_run_id ~ '/host-state/' ~ hpl_capture_label ~ '.txt') | quote }}
+    {
+      printf 'captured_utc='; date --utc --iso-8601=seconds
+      printf '\n[hostname]\n'; hostnamectl
+      printf '\n[load]\n'; uptime
+      printf '\n[memory]\n'; free -h
+      printf '\n[swap-counters]\n'; awk '/^pswp(in|out) / { print }' /proc/vmstat
+      printf '\n[governors]\n'
+      for governor in /sys/devices/system/cpu/cpufreq/policy*/scaling_governor; do
+        test -r "${governor}" && printf '%s=%s\n' "${governor}" "$(<"${governor}")"
+      done
+      printf '\n[temperatures]\n'; sensors 2>&1 || true
+      for temperature in /sys/class/thermal/thermal_zone*/temp; do
+        test -r "${temperature}" && printf '%s=%s\n' "${temperature}" "$(<"${temperature}")"
+      done
+    } > "${output}"
+  args:
+    executable: /bin/bash
+  changed_when: false
+  delegate_to: "{{ hpl_capture_host }}"
+  become: true

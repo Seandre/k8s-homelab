@@ -1,22 +1,4 @@
 ---
-timezone: America/Los_Angeles
-lab_domain: lab.home.arpa
-public_lab_domain: lab.seandre.dev
-network_name: Servers
-vlan_id: 40
-gateway: 192.168.40.1
-dns_server: 192.168.40.1
-proxmox_host: pve-01
-proxmox_ip: 192.168.40.20
-proxmox_fqdn: pve-01.lab.seandre.dev
-proxmox_vm_storage: vmdata
-k3s_disable_components:
-  - traefik
-  - servicelb
-k3s_kubeconfig_local_path: kubeconfig/homelab.kubeconfig
-
-# top500-benchmark-derived HPL defaults. Per-host rank and process-grid values
-# live in the inventory so a VM resize cannot silently change the comparison.
 hpl_top500_upstream_repository: https://github.com/geerlingguy/top500-benchmark
 hpl_top500_upstream_revision: e71588f33fcf358910047de25720e3147d627be4
 hpl_mpich_version: "4.3.2"
@@ -41,17 +23,3 @@ hpl_async_poll: 30
 hpl_max_extra_runs: 2
 hpl_cov_limit_percent: 3.0
 hpl_capacity_memory_percent: 75
-hpl_iperf_port: 5202
-hpl_group_matrix:
-  benchmark_k3s:
-    coordinator: k8s-control-01
-    ranks: 10
-    process_p: 2
-    process_q: 5
-    cpu_family: intel-core-i5-10500t
-  benchmark_baremetal:
-    coordinator: okd-cp-01
-    ranks: 18
-    process_p: 3
-    process_q: 6
-    cpu_family: amd-ryzen-5-pro-5650ge

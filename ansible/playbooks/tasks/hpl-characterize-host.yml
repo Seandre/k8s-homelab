@@ -1,0 +1,26 @@
+---
+- name: Characterize HPL block sizes on {{ hpl_target }}
+  ansible.builtin.include_role:
+    name: hpl
+    tasks_from: run_case
+  loop:
+    - 128
+    - 192
+    - 256
+  loop_control:
+    loop_var: hpl_nb_candidate
+    label: "{{ hpl_target }} NB={{ hpl_nb_candidate }}"
+  vars:
+    hpl_delegate: "{{ hpl_target }}"
+    hpl_case_label: "characterization-nb{{ hpl_nb_candidate }}"
+    hpl_case_stage: characterization
+    hpl_case_comparison: block-size
+    hpl_case_target: "{{ hpl_target }}"
+    hpl_case_cpu_family: "{{ hostvars[hpl_target].hpl_cpu_family }}"
+    hpl_case_n: 15360
+    hpl_case_nb: "{{ hpl_nb_candidate }}"
+    hpl_case_ranks: "{{ hostvars[hpl_target].hpl_ranks }}"
+    hpl_case_p: "{{ hostvars[hpl_target].hpl_process_p }}"
+    hpl_case_q: "{{ hostvars[hpl_target].hpl_process_q }}"
+    hpl_case_warmups: 1
+    hpl_case_runs: 3

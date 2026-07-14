@@ -1,0 +1,29 @@
+---
+- name: Create k3s state capture directory
+  ansible.builtin.file:
+    path: "{{ hpl_result_root }}/{{ hpl_effective_run_id }}/cluster-state"
+    state: directory
+    owner: root
+    group: root
+    mode: "0750"
+  delegate_to: "{{ groups['k3s_control'][0] }}"
+  become: true
+
+- name: Capture k3s node, workload, and Argo CD state
+  ansible.builtin.shell: |
+    set -o errexit -o nounset -o pipefail
+    output={{ (hpl_result_root ~ '/' ~ hpl_effective_run_id ~ '/cluster-state/' ~ hpl_capture_label ~ '.txt') | quote }}
+    {
+      printf 'captured_utc='; date --utc --iso-8601=seconds
+      printf '\n[nodes]\n'; k3s kubectl get nodes -o wide
+      printf '\n[workloads]\n'; k3s kubectl get pods --all-namespaces -o wide
+      printf '\n[argocd-applications]\n'
+      k3s kubectl -n argocd get applications.argoproj.io \
+        -o custom-columns=NAME:.metadata.name,SYNC:.status.sync.status,HEALTH:.status.health.status \
+        2>&1 || true
+    } > "${output}"
+  args:
+    executable: /bin/bash
+  changed_when: false
+  delegate_to: "{{ groups['k3s_control'][0] }}"
+  become: true

@@ -1,0 +1,315 @@
+---
+- name: Validate HPL case parameters
+  ansible.builtin.assert:
+    that:
+      - hpl_case_label is match('^[a-z0-9][a-z0-9-]*$')
+      - hpl_case_stage is match('^[a-z0-9][a-z0-9-]*$')
+      - hpl_case_n | int > 0
+      - hpl_case_nb | int > 0
+      - hpl_case_ranks | int > 0
+      - hpl_case_core_count | default(hpl_case_ranks) | int > 0
+      - hpl_case_p | int > 0
+      - hpl_case_q | int > 0
+      - (hpl_case_p | int) * (hpl_case_q | int) == (hpl_case_ranks | int)
+      - (hpl_case_n | int) % (hpl_case_nb | int) == 0
+    fail_msg: "Invalid HPL dimensions or process grid for {{ hpl_case_label }}."
+  delegate_to: "{{ hpl_delegate | default(inventory_hostname) }}"
+  become: false
+
+- name: Store participating hosts for case validation
+  ansible.builtin.set_fact:
+    hpl_case_validation_hosts: >-
+      {{
+        hpl_case_members
+        if hpl_case_hostfile | default('') | length > 0
+        else [hpl_delegate | default(inventory_hostname)]
+      }}
+
+- name: Create HPL case directory
+  ansible.builtin.file:
+    path: "{{ hpl_result_root }}/{{ hpl_effective_run_id }}/{{ hpl_case_label }}"
+    state: directory
+    owner: "{{ hpl_benchmark_user }}"
+    group: "{{ hpl_benchmark_user }}"
+    mode: "0750"
+  loop: "{{ hpl_case_validation_hosts }}"
+  loop_control:
+    loop_var: hpl_case_directory_host
+    label: "{{ hpl_case_directory_host }}"
+  delegate_to: "{{ hpl_case_directory_host }}"
+  become: true
+
+- name: Record HPL case kernel-log start time on participating hosts
+  ansible.builtin.command:
+    argv:
+      - date
+      - --iso-8601=seconds
+  loop: "{{ hpl_case_validation_hosts }}"
+  loop_control:
+    loop_var: hpl_case_kernel_host
+    label: "{{ hpl_case_kernel_host }}"
+  register: hpl_case_kernel_starts
+  changed_when: false
+  delegate_to: "{{ hpl_case_kernel_host }}"
+  become: false
+
+- name: Index kernel-log start times by participating host
+  ansible.builtin.set_fact:
+    hpl_case_kernel_start_by_host: >-
+      {{
+        hpl_case_kernel_start_by_host | default({})
+        | combine({item.item: item.stdout})
+      }}
+  loop: "{{ hpl_case_kernel_starts.results }}"
+  loop_control:
+    label: "{{ item.item }}"
+
+- name: Capture pre-run hardware and operating-system facts
+  ansible.builtin.shell: |
+    set -o errexit -o nounset -o pipefail
+    shopt -s nullglob
+    output={{ (hpl_result_root ~ '/' ~ hpl_effective_run_id ~ '/' ~ hpl_case_label ~ '/pre-run-facts.txt') | quote }}
+    {
+      printf 'captured_utc='; date --utc --iso-8601=seconds
+      printf '\n[uname]\n'; uname -a
+      printf '\n[lscpu]\n'; lscpu
+      printf '\n[system]\n'; dmidecode --type system
+      printf '\n[storage]\n'; lsblk -e 7 -o NAME,MODEL,SIZE,TYPE,ROTA,TRAN
+      printf '\n[pci]\n'; lspci
+      printf '\n[free]\n'; free -h
+      printf '\n[uptime]\n'; uptime
+      printf '\n[vmstat]\n'; vmstat 1 5
+      printf '\n[swap-counters]\n'; awk '/^pswp(in|out) / { print }' /proc/vmstat
+      printf '\n[numa]\n'; numactl --hardware
+      printf '\n[packages]\n'; dpkg-query -W -f='${Package}=${Version}\n' build-essential gfortran git hwloc libhwloc-dev
+      printf '\n[mpich]\n'; {{ hpl_mpirun_path | quote }} --version
+      printf '\n[openblas]\n'; git -C {{ (hpl_install_root ~ '/tmp/openblas-build') | quote }} rev-parse HEAD
+      printf '\n[hpl-binary]\n'; sha256sum {{ hpl_binary_path | quote }}
+      printf '\n[hpl-source]\n'; cat {{ (hpl_install_root ~ '/share/source.sha256') | quote }}
+      printf '\n[top500-benchmark-basis]\n'; cat {{ (hpl_install_root ~ '/share/UPSTREAM.md') | quote }}
+      printf '\n[build-inputs]\n'; cat {{ (hpl_install_root ~ '/share/build-inputs.json') | quote }}
+      printf '\n[hpl-build]\n'; cat {{ (hpl_install_root ~ '/share/Make.top500') | quote }}
+      printf '\n[governors]\n';
+      for governor in /sys/devices/system/cpu/cpufreq/policy*/scaling_governor; do
+        test -r "${governor}" && printf '%s=%s\n' "${governor}" "$(<"${governor}")"
+      done
+      printf '\n[temperatures]\n'; sensors 2>&1 || true
+      for temperature in /sys/class/thermal/thermal_zone*/temp; do
+        test -r "${temperature}" && printf '%s=%s\n' "${temperature}" "$(<"${temperature}")"
+      done
+    } > "${output}"
+  args:
+    executable: /bin/bash
+  changed_when: false
+  delegate_to: "{{ hpl_delegate | default(inventory_hostname) }}"
+  become: true
+
+- name: Capture pre-run swap and thermal counters on participating hosts
+  ansible.builtin.shell: |
+    set -o errexit -o nounset -o pipefail
+    shopt -s nullglob
+    output={{ (hpl_result_root ~ '/' ~ hpl_effective_run_id ~ '/' ~ hpl_case_label ~ '/health-counters-before.txt') | quote }}
+    {
+      awk '/^pswp(in|out) / { print }' /proc/vmstat
+      for counter in /sys/devices/system/cpu/cpu*/thermal_throttle/*_throttle_count; do
+        printf '%s=%s\n' "${counter}" "$(<"${counter}")"
+      done
+    } > "${output}"
+  args:
+    executable: /bin/bash
+  loop: "{{ hpl_case_validation_hosts }}"
+  loop_control:
+    loop_var: hpl_case_health_host
+    label: "{{ hpl_case_health_host }}"
+  changed_when: false
+  delegate_to: "{{ hpl_case_health_host }}"
+  become: true
+
+- name: Build HPL runner argument list
+  ansible.builtin.set_fact:
+    hpl_case_runner_argv: >-
+      {{
+        [
+          hpl_install_root ~ '/bin/hpl-runner', 'run',
+          '--xhpl', hpl_binary_path,
+          '--mpirun', hpl_mpirun_path,
+          '--output-dir', hpl_result_root ~ '/' ~ hpl_effective_run_id ~ '/' ~ hpl_case_label,
+          '--run-id', hpl_effective_run_id,
+          '--top500-revision', hpl_top500_upstream_revision,
+          '--label', hpl_case_label,
+          '--stage', hpl_case_stage,
+          '--target', hpl_case_target,
+          '--cpu-family', hpl_case_cpu_family,
+          '--n', hpl_case_n | string,
+          '--nb', hpl_case_nb | string,
+          '--p', hpl_case_p | string,
+          '--q', hpl_case_q | string,
+          '--ranks', hpl_case_ranks | string,
+          '--core-count', hpl_case_core_count | default(hpl_case_ranks) | string,
+          '--warmups', hpl_case_warmups | default(0) | string,
+          '--runs', hpl_case_runs | default(1) | string,
+          '--max-extra-runs', hpl_max_extra_runs | string,
+          '--cov-limit-percent', hpl_cov_limit_percent | string,
+          '--comparison', hpl_case_comparison | default('none'),
+          '--binding', hpl_case_binding | default('core')
+        ]
+        + (
+          ['--hostfile', hpl_case_hostfile, '--members', hpl_case_members | join(',')]
+          if hpl_case_hostfile | default('') | length > 0 else []
+        )
+      }}
+  delegate_to: "{{ hpl_delegate | default(inventory_hostname) }}"
+  delegate_facts: false
+
+- name: Run HPL with positive asynchronous polling
+  block:
+    - name: Execute HPL case as the locked benchmark user
+      ansible.builtin.command:
+        argv: "{{ hpl_case_runner_argv }}"
+      environment:
+        OPENBLAS_NUM_THREADS: "1"
+        OMP_NUM_THREADS: "1"
+      async: "{{ hpl_async_timeout | int }}"
+      poll: "{{ hpl_async_poll | int }}"
+      register: hpl_case_execution
+      changed_when: true
+      delegate_to: "{{ hpl_delegate | default(inventory_hostname) }}"
+      become: true
+      become_user: "{{ hpl_benchmark_user }}"
+  always:
+    - name: Capture post-run state
+      ansible.builtin.shell: |
+        set -o errexit -o nounset -o pipefail
+        shopt -s nullglob
+        output={{ (hpl_result_root ~ '/' ~ hpl_effective_run_id ~ '/' ~ hpl_case_label ~ '/post-run-facts.txt') | quote }}
+        {
+          printf 'captured_utc='; date --utc --iso-8601=seconds
+          printf '\n[free]\n'; free -h
+          printf '\n[uptime]\n'; uptime
+          printf '\n[vmstat]\n'; vmstat 1 5
+          printf '\n[swap-counters]\n'; awk '/^pswp(in|out) / { print }' /proc/vmstat
+          printf '\n[temperatures]\n'; sensors 2>&1 || true
+          for temperature in /sys/class/thermal/thermal_zone*/temp; do
+            test -r "${temperature}" && printf '%s=%s\n' "${temperature}" "$(<"${temperature}")"
+          done
+        } > "${output}"
+      args:
+        executable: /bin/bash
+      changed_when: false
+      delegate_to: "{{ hpl_delegate | default(inventory_hostname) }}"
+      become: true
+
+    - name: Compare post-run swap and thermal counters on participating hosts
+      ansible.builtin.shell: |
+        set -o errexit -o nounset -o pipefail
+        shopt -s nullglob
+        before={{ (hpl_result_root ~ '/' ~ hpl_effective_run_id ~ '/' ~ hpl_case_label ~ '/health-counters-before.txt') | quote }}
+        after={{ (hpl_result_root ~ '/' ~ hpl_effective_run_id ~ '/' ~ hpl_case_label ~ '/health-counters-after.txt') | quote }}
+        {
+          awk '/^pswp(in|out) / { print }' /proc/vmstat
+          for counter in /sys/devices/system/cpu/cpu*/thermal_throttle/*_throttle_count; do
+            printf '%s=%s\n' "${counter}" "$(<"${counter}")"
+          done
+        } > "${after}"
+        cmp --silent "${before}" "${after}"
+      args:
+        executable: /bin/bash
+      loop: "{{ hpl_case_validation_hosts }}"
+      loop_control:
+        loop_var: hpl_case_health_host
+        label: "{{ hpl_case_health_host }}"
+      register: hpl_case_health_comparisons
+      changed_when: false
+      failed_when: false
+      delegate_to: "{{ hpl_case_health_host }}"
+      become: true
+
+    - name: Read kernel events emitted during the HPL case
+      ansible.builtin.command:
+        argv:
+          - journalctl
+          - --kernel
+          - "--since={{ hpl_case_kernel_start_by_host[hpl_case_kernel_host] }}"
+          - --no-pager
+      loop: "{{ hpl_case_validation_hosts }}"
+      loop_control:
+        loop_var: hpl_case_kernel_host
+        label: "{{ hpl_case_kernel_host }}"
+      register: hpl_case_kernel_logs
+      changed_when: false
+      failed_when: false
+      delegate_to: "{{ hpl_case_kernel_host }}"
+      become: true
+
+    - name: Store case kernel logs on participating hosts
+      ansible.builtin.copy:
+        dest: "{{ hpl_result_root }}/{{ hpl_effective_run_id }}/{{ hpl_case_label }}/kernel.log"
+        content: "{{ hpl_case_kernel_result.stdout }}\n{{ hpl_case_kernel_result.stderr }}\n"
+        owner: root
+        group: root
+        mode: "0640"
+      loop: "{{ hpl_case_kernel_logs.results }}"
+      loop_control:
+        loop_var: hpl_case_kernel_result
+        label: "{{ hpl_case_kernel_result.item }}"
+      delegate_to: "{{ hpl_case_kernel_result.item }}"
+      become: true
+
+    - name: Evaluate host health and kernel validation results
+      ansible.builtin.set_fact:
+        hpl_case_health_valid: >-
+          {{
+            hpl_case_health_comparisons.results
+            | selectattr('rc', 'ne', 0)
+            | list
+            | length == 0
+          }}
+        hpl_case_kernel_valid: >-
+          {{
+            hpl_case_kernel_logs.results
+            | selectattr('rc', 'ne', 0)
+            | list
+            | length == 0
+            and hpl_case_kernel_logs.results
+            | map(attribute='stdout')
+            | join('\n')
+            is not search(
+              '(?i)(out of memory|oom-kill|killed process|thermal thrott|critical temperature|overheat)'
+            )
+          }}
+
+    - name: Store aggregate case validation result
+      ansible.builtin.copy:
+        dest: "{{ hpl_result_root }}/{{ hpl_effective_run_id }}/{{ hpl_case_label }}/validation.json"
+        content: >-
+          {{
+            {
+              'valid': (
+                hpl_case_health_valid | bool
+                and hpl_case_kernel_valid | bool
+              ),
+              'invalid_reasons':
+                ([] if hpl_case_health_valid | bool else
+                  ['swap or hardware thermal-throttle counter changed'])
+                +
+                ([] if hpl_case_kernel_valid | bool else
+                  ['kernel log unavailable or OOM/thermal event detected'])
+            } | to_nice_json
+          }}
+        owner: root
+        group: root
+        mode: "0640"
+      delegate_to: "{{ hpl_delegate | default(inventory_hostname) }}"
+      become: true
+
+    - name: Reject swap, OOM, or thermal events on any participating host
+      ansible.builtin.assert:
+        that:
+          - hpl_case_health_valid | bool
+          - hpl_case_kernel_valid | bool
+        fail_msg: >-
+          A participating host swapped, throttled, emitted an OOM/thermal
+          kernel event, or could not be validated during {{ hpl_case_label }}.
+          Inspect its health counter files and kernel.log.
+      delegate_to: "{{ hpl_delegate | default(inventory_hostname) }}"
+      become: false

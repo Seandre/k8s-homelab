@@ -1,0 +1,380 @@
+---
+- name: Require Ubuntu on benchmark nodes
+  ansible.builtin.assert:
+    that:
+      - ansible_distribution == 'Ubuntu'
+      - ansible_distribution_version is version('26.04', '==')
+      - ansible_architecture == 'x86_64'
+    fail_msg: >-
+      HPL comparisons require the common Ubuntu 26.04 amd64 software stack;
+      {{ inventory_hostname }} reports {{ ansible_distribution }}
+      {{ ansible_distribution_version }} on {{ ansible_architecture }}.
+
+- name: Check x86-64-v3 runtime support
+  ansible.builtin.command:
+    argv:
+      - /lib64/ld-linux-x86-64.so.2
+      - --help
+  register: hpl_glibc_hwcaps
+  changed_when: false
+  failed_when: false
+
+- name: Require x86-64-v3 CPU features on every selected node
+  ansible.builtin.assert:
+    that:
+      - hpl_glibc_hwcaps.rc == 0
+      - hpl_glibc_hwcaps.stdout is search('x86-64-v3 \(supported, searched\)')
+    fail_msg: >-
+      {{ inventory_hostname }} does not expose the CPU features required by
+      -march=x86-64-v3. For a VM, correct its Proxmox CPU type before building.
+
+- name: Install top500-benchmark build and diagnostic dependencies
+  ansible.builtin.apt:
+    name:
+      - automake
+      - build-essential
+      - dmidecode
+      - gfortran
+      - git
+      - hwloc
+      - iperf3
+      - iputils-ping
+      - libhwloc-dev
+      - lm-sensors
+      - numactl
+      - openssh-client
+      - openssh-server
+      - pciutils
+      - python3
+      - sysstat
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Read installed compiler and topology-library versions
+  ansible.builtin.command:
+    argv:
+      - dpkg-query
+      - -W
+      - "-f=${Package}=${Version}\n"
+      - gcc
+      - g++
+      - gfortran
+      - libc6
+      - libhwloc-dev
+      - make
+  register: hpl_build_tool_versions_command
+  changed_when: false
+
+- name: Store build-tool version signature
+  ansible.builtin.set_fact:
+    hpl_build_tool_version_signature: >-
+      {{ hpl_build_tool_versions_command.stdout_lines | sort | join(';') }}
+
+- name: Require an identical build toolchain on selected nodes
+  ansible.builtin.assert:
+    that:
+      - >-
+        ansible_play_hosts
+        | map('extract', hostvars, 'hpl_build_tool_version_signature')
+        | unique
+        | length == 1
+    fail_msg: >-
+      Compiler, libc, or hwloc package versions differ across the selected
+      Ubuntu nodes. Align their repositories and updates before building:
+      {% for host in ansible_play_hosts %}
+      {{ host }}={{ hostvars[host].hpl_build_tool_version_signature }}
+      {% endfor %}
+  run_once: true
+
+- name: Create locked HPL benchmark account
+  ansible.builtin.user:
+    name: "{{ hpl_benchmark_user }}"
+    comment: top500 HPL benchmark runner
+    create_home: true
+    home: "/home/{{ hpl_benchmark_user }}"
+    password_lock: true
+    shell: /bin/bash
+    system: true
+
+- name: Create top500 build, installation, and result directories
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: directory
+    owner: "{{ item.owner }}"
+    group: "{{ item.group }}"
+    mode: "{{ item.mode }}"
+  loop:
+    - path: /var/cache/top500
+      owner: root
+      group: root
+      mode: "0755"
+    - path: "{{ hpl_install_root }}"
+      owner: root
+      group: root
+      mode: "0755"
+    - path: "{{ hpl_install_root }}/bin"
+      owner: root
+      group: root
+      mode: "0755"
+    - path: "{{ hpl_install_root }}/share"
+      owner: root
+      group: root
+      mode: "0755"
+    - path: "{{ hpl_install_root }}/tmp"
+      owner: root
+      group: root
+      mode: "0755"
+    - path: "{{ hpl_result_root }}"
+      owner: "{{ hpl_benchmark_user }}"
+      group: "{{ hpl_benchmark_user }}"
+      mode: "0750"
+    - path: "/home/{{ hpl_benchmark_user }}/.ssh"
+      owner: "{{ hpl_benchmark_user }}"
+      group: "{{ hpl_benchmark_user }}"
+      mode: "0700"
+    - path: "/home/{{ hpl_benchmark_user }}/.ssh/config.d"
+      owner: "{{ hpl_benchmark_user }}"
+      group: "{{ hpl_benchmark_user }}"
+      mode: "0700"
+
+- name: Configure dedicated benchmark account SSH includes
+  ansible.builtin.copy:
+    dest: "/home/{{ hpl_benchmark_user }}/.ssh/config"
+    content: |
+      Include ~/.ssh/config.d/*
+      Host *
+        BatchMode yes
+    owner: "{{ hpl_benchmark_user }}"
+    group: "{{ hpl_benchmark_user }}"
+    mode: "0600"
+
+- name: Record pinned top500 build inputs
+  ansible.builtin.copy:
+    dest: "{{ hpl_install_root }}/share/build-inputs.json"
+    content: >-
+      {{
+        {
+          'top500_repository': hpl_top500_upstream_repository,
+          'top500_revision': hpl_top500_upstream_revision,
+          'mpich_version': hpl_mpich_version,
+          'mpich_sha256': hpl_mpich_archive_sha256,
+          'mpich_device': hpl_mpich_with_device,
+          'openblas_version': hpl_openblas_version,
+          'openblas_revision': hpl_openblas_revision,
+          'hpl_version': hpl_version,
+          'hpl_sha256': hpl_archive_sha256,
+          'compile_flags': hpl_compile_flags
+        } | to_nice_json
+      }}
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Download checksum-pinned MPICH source
+  ansible.builtin.get_url:
+    url: "{{ hpl_mpich_source_url }}"
+    dest: "/var/cache/top500/mpich-{{ hpl_mpich_version }}.tar.gz"
+    checksum: "sha256:{{ hpl_mpich_archive_sha256 }}"
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Extract MPICH source
+  ansible.builtin.unarchive:
+    src: "/var/cache/top500/mpich-{{ hpl_mpich_version }}.tar.gz"
+    dest: "{{ hpl_install_root }}/tmp"
+    remote_src: true
+    creates: "{{ hpl_install_root }}/tmp/mpich-{{ hpl_mpich_version }}/README"
+
+- name: Configure pinned MPICH like top500-benchmark
+  ansible.builtin.command:
+    argv:
+      - ./configure
+      - --enable-fast=O3,ndebug
+      - --enable-g=none
+      - "--prefix={{ hpl_install_root }}/mpich"
+      - "--with-device={{ hpl_mpich_with_device }}"
+  args:
+    chdir: "{{ hpl_install_root }}/tmp/mpich-{{ hpl_mpich_version }}"
+    creates: "{{ hpl_install_root }}/tmp/COMPILE_MPICH_{{ hpl_mpich_version }}_COMPLETE"
+  environment:
+    CFLAGS: "{{ hpl_compile_flags }}"
+    CXXFLAGS: "{{ hpl_compile_flags }}"
+    FFLAGS: "{{ hpl_compile_flags }} -fallow-argument-mismatch"
+    LDFLAGS: "{{ hpl_compile_flags }}"
+
+- name: Build pinned MPICH
+  ansible.builtin.command:
+    argv:
+      - make
+      - "-j{{ ansible_facts.processor_nproc }}"
+  args:
+    chdir: "{{ hpl_install_root }}/tmp/mpich-{{ hpl_mpich_version }}"
+    creates: "{{ hpl_install_root }}/tmp/COMPILE_MPICH_{{ hpl_mpich_version }}_COMPLETE"
+
+- name: Install pinned MPICH
+  ansible.builtin.command:
+    argv:
+      - make
+      - install
+  args:
+    chdir: "{{ hpl_install_root }}/tmp/mpich-{{ hpl_mpich_version }}"
+    creates: "{{ hpl_install_root }}/tmp/COMPILE_MPICH_{{ hpl_mpich_version }}_COMPLETE"
+
+- name: Mark MPICH compilation complete
+  ansible.builtin.file:
+    path: "{{ hpl_install_root }}/tmp/COMPILE_MPICH_{{ hpl_mpich_version }}_COMPLETE"
+    state: touch
+    access_time: preserve
+    modification_time: preserve
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Check out pinned OpenBLAS source selected by top500-benchmark
+  ansible.builtin.git:
+    repo: "{{ hpl_openblas_repository }}"
+    version: "{{ hpl_openblas_revision }}"
+    dest: "{{ hpl_install_root }}/tmp/openblas-build"
+    force: false
+
+- name: Build pinned OpenBLAS
+  ansible.builtin.command:
+    argv:
+      - make
+      - "-j{{ ansible_facts.processor_vcpus }}"
+      - DYNAMIC_ARCH=1
+  args:
+    chdir: "{{ hpl_install_root }}/tmp/openblas-build"
+    creates: "{{ hpl_install_root }}/tmp/COMPILE_OPENBLAS_{{ hpl_openblas_revision }}_COMPLETE"
+
+- name: Install pinned OpenBLAS
+  ansible.builtin.command:
+    argv:
+      - make
+      - "PREFIX={{ hpl_install_root }}/openblas"
+      - install
+  args:
+    chdir: "{{ hpl_install_root }}/tmp/openblas-build"
+    creates: "{{ hpl_install_root }}/tmp/COMPILE_OPENBLAS_{{ hpl_openblas_revision }}_COMPLETE"
+
+- name: Mark OpenBLAS compilation complete
+  ansible.builtin.file:
+    path: "{{ hpl_install_root }}/tmp/COMPILE_OPENBLAS_{{ hpl_openblas_revision }}_COMPLETE"
+    state: touch
+    access_time: preserve
+    modification_time: preserve
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Download checksum-pinned Netlib HPL source
+  ansible.builtin.get_url:
+    url: "{{ hpl_source_url }}"
+    dest: "/var/cache/top500/hpl-{{ hpl_version }}.tar.gz"
+    checksum: "sha256:{{ hpl_archive_sha256 }}"
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Extract Netlib HPL source into the upstream layout
+  ansible.builtin.unarchive:
+    src: "/var/cache/top500/hpl-{{ hpl_version }}.tar.gz"
+    dest: "{{ hpl_install_root }}/tmp"
+    remote_src: true
+    creates: "{{ hpl_install_root }}/tmp/hpl-{{ hpl_version }}/Makefile"
+
+- name: Generate the generic HPL makefile baseline
+  ansible.builtin.command:
+    argv:
+      - sh
+      - make_generic
+  args:
+    chdir: "{{ hpl_install_root }}/tmp/hpl-{{ hpl_version }}/setup"
+    creates: "{{ hpl_install_root }}/tmp/hpl-{{ hpl_version }}/Make.UNKNOWN"
+
+- name: Install top500-benchmark-derived HPL makefile
+  ansible.builtin.template:
+    src: Make.top500.j2
+    dest: "{{ hpl_install_root }}/tmp/hpl-{{ hpl_version }}/Make.top500"
+    owner: root
+    group: root
+    mode: "0644"
+  register: hpl_make_configuration
+
+- name: Check for compiled HPL binary
+  ansible.builtin.stat:
+    path: "{{ hpl_binary_path }}"
+  register: hpl_compiled_binary
+
+- name: Clean HPL after build configuration changes
+  ansible.builtin.command:
+    argv:
+      - make
+      - arch=top500
+      - clean_arch_all
+  args:
+    chdir: "{{ hpl_install_root }}/tmp/hpl-{{ hpl_version }}"
+  when:
+    - hpl_make_configuration.changed
+    - hpl_compiled_binary.stat.exists
+  changed_when: true
+
+- name: Build HPL with the top500-benchmark toolchain
+  ansible.builtin.command:
+    argv:
+      - make
+      - arch=top500
+  args:
+    chdir: "{{ hpl_install_root }}/tmp/hpl-{{ hpl_version }}"
+  when: hpl_make_configuration.changed or not hpl_compiled_binary.stat.exists
+  changed_when: true
+
+- name: Install HPL build configuration for provenance
+  ansible.builtin.copy:
+    src: "{{ hpl_install_root }}/tmp/hpl-{{ hpl_version }}/Make.top500"
+    dest: "{{ hpl_install_root }}/share/Make.top500"
+    remote_src: true
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Install upstream attribution and license
+  ansible.builtin.copy:
+    src: "{{ item.src }}"
+    dest: "{{ hpl_install_root }}/share/{{ item.dest }}"
+    owner: root
+    group: root
+    mode: "0644"
+  loop:
+    - src: UPSTREAM.md
+      dest: UPSTREAM.md
+    - src: top500-benchmark-LICENSE
+      dest: top500-benchmark-LICENSE
+
+- name: Record pinned HPL source checksum for provenance
+  ansible.builtin.copy:
+    dest: "{{ hpl_install_root }}/share/source.sha256"
+    content: "{{ hpl_archive_sha256 }}  hpl-{{ hpl_version }}.tar.gz\n"
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Install benchmark runner
+  ansible.builtin.copy:
+    src: hpl_runner.py
+    dest: "{{ hpl_install_root }}/bin/hpl-runner"
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Ensure benchmark SSH authorization file exists
+  ansible.builtin.file:
+    path: "/home/{{ hpl_benchmark_user }}/.ssh/authorized_keys"
+    state: touch
+    access_time: preserve
+    modification_time: preserve
+    owner: "{{ hpl_benchmark_user }}"
+    group: "{{ hpl_benchmark_user }}"
+    mode: "0600"

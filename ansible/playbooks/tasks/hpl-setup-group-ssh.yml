@@ -1,0 +1,118 @@
+---
+- name: Generate temporary coordinator SSH key for {{ hpl_benchmark_group }}
+  ansible.builtin.command:
+    argv:
+      - ssh-keygen
+      - -q
+      - -t
+      - ed25519
+      - -N
+      - ""
+      - -C
+      - "hpl-benchmark-{{ hpl_effective_run_id }}-{{ hpl_benchmark_group }}"
+      - -f
+      - "/home/{{ hpl_benchmark_user }}/.ssh/hpl-{{ hpl_effective_run_id }}-{{ hpl_benchmark_group }}"
+  args:
+    creates: "/home/{{ hpl_benchmark_user }}/.ssh/hpl-{{ hpl_effective_run_id }}-{{ hpl_benchmark_group }}"
+  delegate_to: "{{ hpl_group_matrix[hpl_benchmark_group].coordinator }}"
+  become: true
+  become_user: "{{ hpl_benchmark_user }}"
+
+- name: Read temporary coordinator public key for {{ hpl_benchmark_group }}
+  ansible.builtin.slurp:
+    src: "/home/{{ hpl_benchmark_user }}/.ssh/hpl-{{ hpl_effective_run_id }}-{{ hpl_benchmark_group }}.pub"
+  register: hpl_group_public_key
+  delegate_to: "{{ hpl_group_matrix[hpl_benchmark_group].coordinator }}"
+  become: true
+
+- name: Read temporary coordinator private key for {{ hpl_benchmark_group }}
+  ansible.builtin.slurp:
+    src: "/home/{{ hpl_benchmark_user }}/.ssh/hpl-{{ hpl_effective_run_id }}-{{ hpl_benchmark_group }}"
+  register: hpl_group_private_key
+  delegate_to: "{{ hpl_group_matrix[hpl_benchmark_group].coordinator }}"
+  become: true
+  no_log: true
+
+- name: Distribute temporary launch key within {{ hpl_benchmark_group }}
+  ansible.builtin.copy:
+    dest: "/home/{{ hpl_benchmark_user }}/.ssh/hpl-{{ hpl_effective_run_id }}-{{ hpl_benchmark_group }}"
+    content: "{{ hpl_group_private_key.content | b64decode }}"
+    owner: "{{ hpl_benchmark_user }}"
+    group: "{{ hpl_benchmark_user }}"
+    mode: "0600"
+  loop: "{{ groups[hpl_benchmark_group] }}"
+  loop_control:
+    label: "{{ item }}"
+  delegate_to: "{{ item }}"
+  become: true
+  no_log: true
+
+- name: Authorize temporary coordinator key within {{ hpl_benchmark_group }}
+  ansible.builtin.lineinfile:
+    path: "/home/{{ hpl_benchmark_user }}/.ssh/authorized_keys"
+    line: "{{ hpl_group_public_key.content | b64decode | trim }}"
+    state: present
+    owner: "{{ hpl_benchmark_user }}"
+    group: "{{ hpl_benchmark_user }}"
+    mode: "0600"
+  loop: "{{ groups[hpl_benchmark_group] }}"
+  loop_control:
+    label: "{{ item }}"
+  delegate_to: "{{ item }}"
+  become: true
+  no_log: true
+
+- name: Configure temporary noninteractive SSH launch within {{ hpl_benchmark_group }}
+  ansible.builtin.copy:
+    dest: "/home/{{ hpl_benchmark_user }}/.ssh/config.d/hpl-{{ hpl_effective_run_id }}-{{ hpl_benchmark_group }}.conf"
+    content: |
+      Host{% for host in groups[hpl_benchmark_group] %} {{ hostvars[host].ansible_host }}{% endfor %}
+        IdentityFile /home/{{ hpl_benchmark_user }}/.ssh/hpl-{{ hpl_effective_run_id }}-{{ hpl_benchmark_group }}
+        IdentitiesOnly yes
+        StrictHostKeyChecking no
+        UserKnownHostsFile /dev/null
+    owner: "{{ hpl_benchmark_user }}"
+    group: "{{ hpl_benchmark_user }}"
+    mode: "0600"
+  loop: "{{ groups[hpl_benchmark_group] }}"
+  loop_control:
+    label: "{{ item }}"
+  delegate_to: "{{ item }}"
+  become: true
+
+- name: Write MPI hostfile for {{ hpl_benchmark_group }}
+  ansible.builtin.copy:
+    dest: "/home/{{ hpl_benchmark_user }}/.ssh/hpl-{{ hpl_effective_run_id }}-{{ hpl_benchmark_group }}.hosts"
+    content: |
+      {% for host in groups[hpl_benchmark_group] %}
+      {{ hostvars[host].ansible_host }}:{{ hostvars[host].hpl_ranks }}
+      {% endfor %}
+    owner: "{{ hpl_benchmark_user }}"
+    group: "{{ hpl_benchmark_user }}"
+    mode: "0600"
+  delegate_to: "{{ hpl_group_matrix[hpl_benchmark_group].coordinator }}"
+  become: true
+
+- name: Verify temporary all-to-all SSH access within {{ hpl_benchmark_group }}
+  ansible.builtin.command:
+    argv:
+      - ssh
+      - -o
+      - BatchMode=yes
+      - -o
+      - IdentitiesOnly=yes
+      - -o
+      - StrictHostKeyChecking=no
+      - -o
+      - UserKnownHostsFile=/dev/null
+      - -i
+      - "/home/{{ hpl_benchmark_user }}/.ssh/hpl-{{ hpl_effective_run_id }}-{{ hpl_benchmark_group }}"
+      - "{{ hpl_benchmark_user }}@{{ hostvars[item.1].ansible_host }}"
+      - "true"
+  loop: "{{ groups[hpl_benchmark_group] | product(groups[hpl_benchmark_group]) | list }}"
+  loop_control:
+    label: "{{ item.0 }} to {{ item.1 }}"
+  changed_when: false
+  delegate_to: "{{ item.0 }}"
+  become: true
+  become_user: "{{ hpl_benchmark_user }}"

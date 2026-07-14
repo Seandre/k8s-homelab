@@ -23,6 +23,7 @@ Do not activate the OKD private records before `bastion-01` is operational. Do n
 2. [KOReader Sync Runbook](../20-optional/02-koreader-sync-runbook.md) applies to the existing k3s application and can be used independently of OKD.
 3. [Sealed Secrets](../20-optional/03-sealed-secrets.md) is a k3s GitOps and recovery exercise; complete its key-backup test before relying on encrypted secrets.
 4. [Docusaurus Documentation Site](../20-optional/04-docusaurus-site.md) builds this Markdown collection with local search and prepares its GitOps deployment.
+5. [Top500 HPL Benchmark](../20-optional/05-hpl-benchmark.md) compares the k3s VMs and Ryzen systems after temporary Ubuntu installation and before OKD overwrites the Ryzen disks.
 
 ## Operations References
 

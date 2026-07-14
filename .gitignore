@@ -1,6 +1,8 @@
 # OS/editor
 .DS_Store
 Thumbs.db
+__pycache__/
+*.py[cod]
 .vscode/*
 !.vscode/settings.json
 !.vscode/extensions.json
@@ -35,3 +37,4 @@ build/
 tmp/
 .cache/
 diagnostics/
+benchmark-results/

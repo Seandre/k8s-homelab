@@ -32,6 +32,7 @@ const sidebars = {
         'optional/koreader-sync-runbook',
         'optional/sealed-secrets',
         'optional/docusaurus-site',
+        'optional/hpl-benchmark',
       ],
     },
     {

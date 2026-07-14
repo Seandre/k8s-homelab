@@ -1,0 +1,13 @@
+---
+- name: Capture recovered state for {{ hpl_capture_host }}
+  block:
+    - name: Capture recovered benchmark host state
+      ansible.builtin.include_role:
+        name: hpl
+        tasks_from: capture_host
+      vars:
+        hpl_capture_label: isolated-after-recovery
+  rescue:
+    - name: Mark failed recovered host capture
+      ansible.builtin.set_fact:
+        hpl_isolated_failed: true

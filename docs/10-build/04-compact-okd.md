@@ -42,6 +42,8 @@ Install the three 1 TB SSDs, update each system to the same stable firmware, and
 
 Before installation, verify memory and storage and test SSD latency. etcd is sensitive to slow synchronous writes; investigate an outlier rather than accepting it as normal.
 
+If you want a repeatable compute baseline, install temporary Ubuntu 26.04 on all three Ryzen nodes and complete [Optional 05: Top500 HPL Benchmark](../20-optional/05-hpl-benchmark.md) now. It is based on the pinned `geerlingguy/top500-benchmark` workflow. Collect and back up its results before continuing: the Agent-based installer may overwrite these temporary installations and their local data. The HPL project is optional and does not block OKD when deliberately skipped.
+
 The initial 16 GB per node is an installation floor. Plan to upgrade to 32 GB after the cluster is stable, one node at a time.
 
 ## Gate 3: Activate Private DNS

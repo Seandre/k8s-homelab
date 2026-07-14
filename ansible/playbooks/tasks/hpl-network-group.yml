@@ -1,0 +1,8 @@
+---
+- name: Measure ordered network pairs in {{ hpl_network_group.name }}
+  ansible.builtin.include_tasks: hpl-network-pair.yml
+  loop: "{{ hpl_network_group.members | product(hpl_network_group.members) | list }}"
+  loop_control:
+    loop_var: hpl_network_pair
+    label: "{{ hpl_network_pair.0 }} -> {{ hpl_network_pair.1 }}"
+  when: hpl_network_pair.0 != hpl_network_pair.1

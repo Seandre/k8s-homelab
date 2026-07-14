@@ -1,0 +1,100 @@
+---
+- name: Create shared standard-case directory for {{ hpl_benchmark_group }}
+  ansible.builtin.file:
+    path: "{{ hpl_result_root }}/{{ hpl_effective_run_id }}/isolated-group-standard-{{ hpl_benchmark_group }}"
+    state: directory
+    owner: "{{ hpl_benchmark_user }}"
+    group: "{{ hpl_benchmark_user }}"
+    mode: "0750"
+  loop: "{{ groups[hpl_benchmark_group] }}"
+  loop_control:
+    label: "{{ item }}"
+  delegate_to: "{{ item }}"
+  become: true
+
+- name: Run isolated standard group comparison for {{ hpl_benchmark_group }}
+  ansible.builtin.include_role:
+    name: hpl
+    tasks_from: run_case
+  vars:
+    hpl_delegate: "{{ hpl_group_matrix[hpl_benchmark_group].coordinator }}"
+    hpl_case_label: "isolated-group-standard-{{ hpl_benchmark_group }}"
+    hpl_case_stage: isolated-group
+    hpl_case_comparison: standard
+    hpl_case_target: "{{ hpl_benchmark_group }}"
+    hpl_case_cpu_family: "{{ hpl_group_matrix[hpl_benchmark_group].cpu_family }}"
+    hpl_case_n: 43008
+    hpl_case_nb: 192
+    hpl_case_ranks: "{{ hpl_group_matrix[hpl_benchmark_group].ranks }}"
+    hpl_case_p: "{{ hpl_group_matrix[hpl_benchmark_group].process_p }}"
+    hpl_case_q: "{{ hpl_group_matrix[hpl_benchmark_group].process_q }}"
+    hpl_case_warmups: 1
+    hpl_case_runs: 5
+    hpl_case_members: "{{ groups[hpl_benchmark_group] }}"
+    hpl_case_hostfile: >-
+      /home/{{ hpl_benchmark_user }}/.ssh/hpl-{{ hpl_effective_run_id }}-{{ hpl_benchmark_group }}.hosts
+
+- name: Read member memory for capacity run | {{ hpl_benchmark_group }}
+  ansible.builtin.command:
+    argv:
+      - awk
+      - /MemTotal/
+      - /proc/meminfo
+  loop: "{{ groups[hpl_benchmark_group] }}"
+  loop_control:
+    label: "{{ item }}"
+  register: hpl_group_memtotal
+  changed_when: false
+  delegate_to: "{{ item }}"
+  become: false
+
+- name: Calculate tuned group capacity N for {{ hpl_benchmark_group }}
+  ansible.builtin.set_fact:
+    hpl_group_capacity_n: >-
+      {{
+        (
+          (
+            (
+              ((hpl_group_memtotal.results | map(attribute='stdout')
+              | map('regex_replace', '^MemTotal:\\s+([0-9]+).*$', '\\1')
+              | map('int') | sum) * 1024
+              * (hpl_capacity_memory_percent | int) / 100 / 8) ** 0.5
+            ) // (hpl_selected_nb | int)
+          ) * (hpl_selected_nb | int)
+        ) | int
+      }}
+
+- name: Create shared capacity-case directory for {{ hpl_benchmark_group }}
+  ansible.builtin.file:
+    path: "{{ hpl_result_root }}/{{ hpl_effective_run_id }}/isolated-group-capacity-{{ hpl_benchmark_group }}"
+    state: directory
+    owner: "{{ hpl_benchmark_user }}"
+    group: "{{ hpl_benchmark_user }}"
+    mode: "0750"
+  loop: "{{ groups[hpl_benchmark_group] }}"
+  loop_control:
+    label: "{{ item }}"
+  delegate_to: "{{ item }}"
+  become: true
+
+- name: Run isolated tuned-capacity group comparison for {{ hpl_benchmark_group }}
+  ansible.builtin.include_role:
+    name: hpl
+    tasks_from: run_case
+  vars:
+    hpl_delegate: "{{ hpl_group_matrix[hpl_benchmark_group].coordinator }}"
+    hpl_case_label: "isolated-group-capacity-{{ hpl_benchmark_group }}"
+    hpl_case_stage: isolated-capacity-group
+    hpl_case_comparison: capacity
+    hpl_case_target: "{{ hpl_benchmark_group }}"
+    hpl_case_cpu_family: "{{ hpl_group_matrix[hpl_benchmark_group].cpu_family }}"
+    hpl_case_n: "{{ hpl_group_capacity_n }}"
+    hpl_case_nb: "{{ hpl_selected_nb }}"
+    hpl_case_ranks: "{{ hpl_group_matrix[hpl_benchmark_group].ranks }}"
+    hpl_case_p: "{{ hpl_group_matrix[hpl_benchmark_group].process_p }}"
+    hpl_case_q: "{{ hpl_group_matrix[hpl_benchmark_group].process_q }}"
+    hpl_case_warmups: 1
+    hpl_case_runs: 5
+    hpl_case_members: "{{ groups[hpl_benchmark_group] }}"
+    hpl_case_hostfile: >-
+      /home/{{ hpl_benchmark_user }}/.ssh/hpl-{{ hpl_effective_run_id }}-{{ hpl_benchmark_group }}.hosts
