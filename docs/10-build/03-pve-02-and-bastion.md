@@ -75,12 +75,32 @@ The switch port should carry the `Servers` network the same way it does for `pve
 
 ## Step 3: Prepare BIOS and Install Proxmox
 
-In the HP BIOS:
+The HP EliteDesk 800 G6 Desktop Mini uses HP's S22-family Computer Setup layout. The menu names below match the model-specific [HP BIOS simulator](https://support.hp.com/us-en/product/setup-user-guides/hp-elitedesk-800-g6-desktop-mini-pc/34658463). Power on or restart the system and press `F10` repeatedly to enter **HP Computer Setup**.
 
-1. Confirm the system sees 32 GB RAM and the 512 GB storage device.
-2. Enable Intel virtualization.
-3. Disable Secure Boot if the Proxmox installer requires it.
-4. Set the NVMe as the primary boot device after install.
+First open **Main → System Information** and confirm:
+
+- the processor is the Intel Core i5-10500T;
+- **Memory Size** is approximately `32768 MB`; and
+- the 512 GB NVMe device appears under **Storage Device**.
+
+Then apply these settings. A checked box means enabled in HP Computer Setup.
+
+| HP Computer Setup path | Setting | Value for `pve-02` | Reason |
+|---|---|---|---|
+| **Security → Secure Boot Configuration** | **Secure Boot** | Checked | Current Proxmox VE supports Secure Boot on new installations. Do not enable legacy boot. |
+| **Advanced → System Options** | **Configure Storage Controller for RAID** | Unchecked | Expose the single storage device directly rather than through firmware RAID. |
+| **Advanced → System Options** | **Configure Storage Controller for Intel Optane** | Unchecked | This host does not use Intel Optane acceleration. |
+| **Advanced → System Options** | **Turbo-Boost** | Checked | Preserve the processor's normal boost behavior. |
+| **Advanced → System Options** | **Hyperthreading** | Checked | Expose all 12 logical CPUs from the 6-core i5-10500T. |
+| **Advanced → System Options** | **Virtualization Technology (VTx)** | Checked | Required for KVM virtual machines. |
+| **Advanced → System Options** | **Virtualization Technology for Directed I/O (VTd)** | Checked | Enables the IOMMU needed for PCIe device assignment. |
+| **Advanced → Boot Options** | **Fast Boot** | Unchecked during installation | Ensures the firmware performs full USB discovery while installing. It may be re-enabled after successful boot validation. |
+| **Advanced → Boot Options** | **USB Storage Boot** | Checked | Allows the Proxmox installer USB to appear in the boot menu. |
+| **Advanced → Boot Options** | **After Power Loss** | **Power On** | Returns the virtualization host to service after power is restored. |
+
+Leave **DMA Protection**, **Pre-boot DMA protection**, TPM, HP Sure Start, AMT, and other settings at their current defaults; they are not prerequisites for this installation. Do not clear Secure Boot keys or the TPM. Proxmox VE has supported Secure Boot out of the box since version 8.1, so disabling it is only a troubleshooting step for old or incorrectly created installation media, not part of this build. See the Secure Boot section of the [Proxmox VE Administration Guide](https://pve.proxmox.com/pve-docs/pve-admin-guide.pdf).
+
+Select **Main → Save Changes and Exit**. Insert a current Proxmox VE installer written for UEFI boot, restart, press `F9` repeatedly for **Boot Device Options**, and select the UEFI entry for the USB drive. Use this one-time menu instead of permanently placing USB ahead of the internal disk. After installation, confirm **Advanced → Boot Options → UEFI Boot Order** lists the NVMe Proxmox boot entry before network boot entries.
 
 Install Proxmox VE onto the 512 GB device:
 
