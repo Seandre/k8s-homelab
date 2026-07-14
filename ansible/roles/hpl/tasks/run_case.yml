@@ -25,6 +25,50 @@
         else [hpl_delegate | default(inventory_hostname)]
       }}
 
+- name: Check for prepared HPL binaries on participating hosts
+  ansible.builtin.stat:
+    path: "{{ hpl_binary_path }}"
+  loop: "{{ hpl_case_validation_hosts }}"
+  loop_control:
+    loop_var: hpl_case_preflight_host
+    label: "{{ hpl_case_preflight_host }}"
+  register: hpl_case_binary_checks
+  delegate_to: "{{ hpl_case_preflight_host }}"
+  become: false
+
+- name: Check for benchmark account on participating hosts
+  ansible.builtin.command:
+    argv:
+      - getent
+      - passwd
+      - "{{ hpl_benchmark_user }}"
+  loop: "{{ hpl_case_validation_hosts }}"
+  loop_control:
+    loop_var: hpl_case_preflight_host
+    label: "{{ hpl_case_preflight_host }}"
+  register: hpl_case_account_checks
+  changed_when: false
+  failed_when: false
+  delegate_to: "{{ hpl_case_preflight_host }}"
+  become: false
+
+- name: Require HPL preparation before running a case
+  ansible.builtin.assert:
+    that:
+      - >-
+        hpl_case_binary_checks.results
+        | selectattr('stat.exists', 'equalto', false)
+        | list
+        | length == 0
+      - >-
+        hpl_case_account_checks.results
+        | selectattr('rc', 'ne', 0)
+        | list
+        | length == 0
+    fail_msg: >-
+      HPL is not prepared on every participating host. Run this playbook with
+      --tags prepare and --ask-become-pass before smoke, live, or isolated.
+
 - name: Create HPL case directory
   ansible.builtin.file:
     path: "{{ hpl_result_root }}/{{ hpl_effective_run_id }}/{{ hpl_case_label }}"
@@ -58,11 +102,11 @@
     hpl_case_kernel_start_by_host: >-
       {{
         hpl_case_kernel_start_by_host | default({})
-        | combine({item.item: item.stdout})
+        | combine({item.hpl_case_kernel_host: item.stdout})
       }}
   loop: "{{ hpl_case_kernel_starts.results }}"
   loop_control:
-    label: "{{ item.item }}"
+    label: "{{ item.hpl_case_kernel_host }}"
 
 - name: Capture pre-run hardware and operating-system facts
   ansible.builtin.shell: |
@@ -81,7 +125,7 @@
       printf '\n[vmstat]\n'; vmstat 1 5
       printf '\n[swap-counters]\n'; awk '/^pswp(in|out) / { print }' /proc/vmstat
       printf '\n[numa]\n'; numactl --hardware
-      printf '\n[packages]\n'; dpkg-query -W -f='${Package}=${Version}\n' build-essential gfortran git hwloc libhwloc-dev
+      printf '\n[packages]\n'; dpkg-query -W -f='${Package}=${Version}\n' acl build-essential gfortran git hwloc libhwloc-dev
       printf '\n[mpich]\n'; {{ hpl_mpirun_path | quote }} --version
       printf '\n[openblas]\n'; git -C {{ (hpl_install_root ~ '/tmp/openblas-build') | quote }} rev-parse HEAD
       printf '\n[hpl-binary]\n'; sha256sum {{ hpl_binary_path | quote }}
@@ -228,7 +272,7 @@
       ansible.builtin.command:
         argv:
           - journalctl
-          - --kernel
+          - --dmesg
           - "--since={{ hpl_case_kernel_start_by_host[hpl_case_kernel_host] }}"
           - --no-pager
       loop: "{{ hpl_case_validation_hosts }}"
@@ -251,8 +295,8 @@
       loop: "{{ hpl_case_kernel_logs.results }}"
       loop_control:
         loop_var: hpl_case_kernel_result
-        label: "{{ hpl_case_kernel_result.item }}"
-      delegate_to: "{{ hpl_case_kernel_result.item }}"
+        label: "{{ hpl_case_kernel_result.hpl_case_kernel_host }}"
+      delegate_to: "{{ hpl_case_kernel_result.hpl_case_kernel_host }}"
       become: true
 
     - name: Evaluate host health and kernel validation results

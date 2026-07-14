@@ -52,6 +52,13 @@ Before comparing results:
 - update all six Ubuntu nodes from the same repositories;
 - ensure `pve-01` and `utility-01` remain reachable from the workstation.
 
+Ubuntu 26.04 installs `sudo-rs` as `/usr/bin/sudo` and keeps the classic sudo
+implementation at `/usr/bin/sudo.ws`. The benchmark inventory selects
+`/usr/bin/sudo.ws` for `benchmark_all` because Ansible's sudo become plugin
+requires its compatible password-prompt protocol. Every separate playbook
+invocation that performs preparation or a benchmark still requires
+`--ask-become-pass` unless `sean` has an appropriate passwordless sudo policy.
+
 Use a stable identifier across related stages:
 
 ```bash
@@ -94,8 +101,10 @@ The role ports the upstream setup into an idempotent role so the homelab playboo
 - creates the locked system account `hplbench` and runs HPL without root privileges;
 - forces `OPENBLAS_NUM_THREADS=1` and asks MPICH/Hydra to bind every MPI rank to one core or vCPU;
 - installs hardware, thermal, load, swap, network, and package diagnostics.
+- installs POSIX ACL support so Ansible can securely execute the runner as the
+  unprivileged `hplbench` account.
 
-Preparation is idempotent. Re-running it verifies source identity and converges packages, directories, account state, build configuration, attribution, and helper scripts. The workflow intentionally does not invoke the upstream `ssh` play: it creates per-run credentials for distributed tests and removes them in `always` cleanup instead of leaving cluster-wide keys in place.
+Preparation is idempotent. Re-running it verifies source identity and converges packages, directories, account state, build configuration, attribution, and helper scripts. Long MPICH, OpenBLAS, and HPL compilation steps use positive asynchronous polling and are throttled to one host at a time so the three k3s VMs do not saturate their shared Proxmox CPU and lose SSH responsiveness. Completed build markers are preserved, so a retry skips finished components and resumes an interrupted `make` incrementally. The workflow intentionally does not invoke the upstream `ssh` play: it creates per-run credentials for distributed tests and removes them in `always` cleanup instead of leaving cluster-wide keys in place.
 
 ## Benchmark Matrix
 

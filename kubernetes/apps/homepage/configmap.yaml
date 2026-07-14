@@ -38,6 +38,16 @@ data:
               version: 4
               metric: info
               refreshInterval: 5000
+        - HP Host Temperature:
+            href: https://pve-01.lab.seandre.dev:8006
+            description: pve-01 CPU package temperature
+            icon: proxmox.png
+            widget:
+              type: glances
+              url: http://192.168.40.20:61208
+              version: 4
+              metric: sensor:Package id 0
+              refreshInterval: 5000
         - UniFi:
             href: https://unifi.ui.com
             description: Network management

@@ -18,6 +18,8 @@ hpl_binary_path: "{{ hpl_install_root }}/tmp/hpl-{{ hpl_version }}/bin/top500/xh
 hpl_mpirun_path: "{{ hpl_install_root }}/mpich/bin/mpirun"
 hpl_result_root: /var/lib/hpl-results
 hpl_benchmark_user: hplbench
+hpl_build_async_timeout: 7200
+hpl_build_async_poll: 30
 hpl_async_timeout: 14400
 hpl_async_poll: 30
 hpl_max_extra_runs: 2

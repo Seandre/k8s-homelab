@@ -754,11 +754,12 @@
   vars:
     hpl_effective_run_id: "{{ hostvars['localhost'].hpl_effective_run_id }}"
     hpl_local_result_dir: "{{ hostvars['localhost'].hpl_local_result_dir }}"
+    hpl_collection_result_root: "{{ hpl_result_root | default('/var/lib/hpl-results') }}"
     hpl_remote_archive: "/tmp/hpl-results-{{ hpl_effective_run_id }}-{{ inventory_hostname }}.tar.gz"
   tasks:
     - name: Check for host results in this run
       ansible.builtin.stat:
-        path: "{{ hpl_result_root }}/{{ hpl_effective_run_id }}"
+        path: "{{ hpl_collection_result_root }}/{{ hpl_effective_run_id }}"
       register: hpl_host_result_directory
       become: true
 
@@ -776,7 +777,7 @@
         argv:
           - tar
           - -C
-          - "{{ hpl_result_root }}/{{ hpl_effective_run_id }}"
+          - "{{ hpl_collection_result_root }}/{{ hpl_effective_run_id }}"
           - -czf
           - "{{ hpl_remote_archive }}"
           - .
