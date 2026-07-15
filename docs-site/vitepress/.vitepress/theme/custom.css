@@ -242,6 +242,21 @@ body {
   max-width: 800px;
 }
 
+@media (min-width: 960px) {
+  .VPDoc.has-sidebar {
+    padding-left: 0;
+  }
+
+  .VPDoc.has-sidebar > .container > .content {
+    padding-left: 24px;
+  }
+
+  .VPDoc.has-sidebar .content-container {
+    margin-right: 0;
+    margin-left: 0;
+  }
+}
+
 @media (min-width: 1280px) {
   .VPDoc .aside {
     max-width: 200px;
