@@ -123,6 +123,10 @@ body {
   .Layout .VPNavBar.has-sidebar .divider {
     padding-left: 0;
   }
+
+  .Layout .VPNavBarTitle.has-sidebar .title {
+    border-bottom-color: transparent;
+  }
 }
 
 .VPNavBarTitle .title {
