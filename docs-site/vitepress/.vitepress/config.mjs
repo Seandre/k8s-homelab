@@ -17,7 +17,7 @@ export default defineConfig({
   srcDir: '../../docs',
   outDir: './dist',
   cacheDir: './.vitepress/cache',
-  appearance: 'dark',
+  appearance: true,
 
   // Markdown lives outside the VitePress package root. Resolve Vue from this
   // package so SSR does not search for it beside the repository-level docs.
@@ -37,7 +37,6 @@ export default defineConfig({
     siteTitle: 'seandre homelab',
     nav: [
       {text: 'Documentation', link: '/'},
-      {text: 'GitHub', link: 'https://github.com/seandre/k8s-homelab'},
     ],
     sidebar: [
       {text: 'Home', link: '/'},

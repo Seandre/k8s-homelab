@@ -1,29 +1,351 @@
+/*
+ * Grimmory-inspired VitePress theme. The palette intentionally uses the
+ * same warm stone neutrals, near-black dark surfaces, and orange accent.
+ */
 :root {
-  --vp-c-brand-1: #286983;
-  --vp-c-brand-2: #24627a;
-  --vp-c-brand-3: #225c73;
-  --vp-c-brand-soft: rgb(40 105 131 / 14%);
-  --vp-font-family-base: Inter, ui-sans-serif, system-ui, sans-serif;
-  --vp-font-family-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  --vp-code-font-size: 0.92em;
+  color-scheme: light;
+  --vp-c-brand-1: #c2410c;
+  --vp-c-brand-1: oklch(55.3% 0.195 38.402);
+  --vp-c-brand-2: #ea580c;
+  --vp-c-brand-2: oklch(64.6% 0.222 41.116);
+  --vp-c-brand-3: #ea580c;
+  --vp-c-brand-3: oklch(64.6% 0.222 41.116);
+  --vp-c-brand-soft: rgb(234 88 12 / 12%);
+
+  --vp-c-bg: #fafaf9;
+  --vp-c-bg: oklch(98.5% 0.001 106.423);
+  --vp-c-bg-alt: #f5f5f4;
+  --vp-c-bg-elv: #ffffff;
+  --vp-c-bg-soft: #ffffff;
+  --vp-c-border: #e7e5e4;
+  --vp-c-border: oklch(92.3% 0.003 48.717);
+  --vp-c-divider: #e7e5e4;
+  --vp-c-divider: oklch(92.3% 0.003 48.717);
+  --vp-c-gutter: #e7e5e4;
+  --vp-c-text-1: #1c1917;
+  --vp-c-text-1: oklch(14.7% 0.004 49.25);
+  --vp-c-text-2: #57534e;
+  --vp-c-text-2: oklch(44.4% 0.011 73.639);
+  --vp-c-text-3: #78716c;
+
+  --vp-nav-bg-color: #f1efed;
+  --vp-nav-bg-color: color-mix(in srgb, #f3f1ef 97%, #fed7aa 3%);
+  --vp-nav-screen-bg-color: var(--vp-nav-bg-color);
+  --vp-sidebar-bg-color: var(--vp-c-bg);
+  --vp-local-nav-bg-color: rgb(250 250 249 / 92%);
+  --vp-code-bg: rgb(234 88 12 / 9%);
+  --vp-code-block-bg: #f3f1ef;
+  --vp-code-block-divider-color: var(--vp-c-divider);
+  --vp-input-bg-color: rgb(255 255 255 / 65%);
+
+  --vp-font-family-base: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --vp-font-family-mono: "JetBrains Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  --vp-code-font-size: 0.875em;
   --vp-layout-max-width: 1520px;
+  --vp-sidebar-width: 300px;
 }
 
 .dark {
-  --vp-c-brand-1: #8bd5ca;
-  --vp-c-brand-2: #6ccbbd;
-  --vp-c-brand-3: #5dc6b6;
-  --vp-c-brand-soft: rgb(139 213 202 / 14%);
-  --vp-c-bg: #181926;
-  --vp-c-bg-alt: #1e2030;
-  --vp-c-bg-elv: #24273a;
-  --vp-c-bg-soft: #1e2030;
+  color-scheme: dark;
+  --vp-c-brand-1: #fb923c;
+  --vp-c-brand-1: oklch(75% 0.183 55.934);
+  --vp-c-brand-2: #fdba74;
+  --vp-c-brand-2: oklch(83.7% 0.128 66.29);
+  --vp-c-brand-3: #f97316;
+  --vp-c-brand-3: oklch(70.5% 0.213 47.604);
+  --vp-c-brand-soft: rgb(249 115 22 / 14%);
+
+  --vp-c-bg: #171717;
+  --vp-c-bg: oklch(20.5% 0 0);
+  --vp-c-bg-alt: #1f1f1f;
+  --vp-c-bg-elv: #262626;
+  --vp-c-bg-elv: oklch(26.9% 0 0);
+  --vp-c-bg-soft: #262626;
+  --vp-c-bg-soft: oklch(26.9% 0 0);
+  --vp-c-border: #404040;
+  --vp-c-border: oklch(37.1% 0 0);
+  --vp-c-divider: #404040;
+  --vp-c-divider: oklch(37.1% 0 0);
+  --vp-c-gutter: #404040;
+  --vp-c-text-1: #fafafa;
+  --vp-c-text-1: oklch(98.5% 0 0);
+  --vp-c-text-2: #a3a3a3;
+  --vp-c-text-2: oklch(70.8% 0 0);
+  --vp-c-text-3: #737373;
+
+  --vp-nav-bg-color: #0f0b0a;
+  --vp-nav-bg-color: color-mix(in srgb, #0a0a0a 97%, #9a3412 3%);
+  --vp-nav-screen-bg-color: var(--vp-nav-bg-color);
+  --vp-sidebar-bg-color: var(--vp-c-bg);
+  --vp-local-nav-bg-color: rgb(23 23 23 / 92%);
+  --vp-code-bg: rgb(251 146 60 / 12%);
+  --vp-code-block-bg: #111113;
+  --vp-input-bg-color: rgb(38 38 38 / 70%);
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-size: 16px;
+  line-height: 1.75;
+  letter-spacing: -0.006em;
+}
+
+::selection {
+  color: var(--vp-c-text-1);
+  background: var(--vp-c-brand-soft);
+}
+
+/* Navigation and search */
+.VPNavBar {
+  border-bottom: 1px solid var(--vp-c-divider);
+  background: var(--vp-nav-bg-color) !important;
+}
+
+.VPNavBarTitle .title {
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.VPNavBarMenuLink {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.VPNavBarSocialLinks {
+  border-left: 0 !important;
+}
+
+.VPNavBarSocialLinks .VPSocialLink,
+.VPNavBarAppearance .VPSwitchAppearance {
+  border-radius: 0.5rem;
+  transition: color 150ms ease, background-color 150ms ease;
+}
+
+.VPNavBarSocialLinks .VPSocialLink:hover,
+.VPNavBarAppearance .VPSwitchAppearance:hover {
+  color: var(--vp-c-brand-1);
+  background: var(--vp-c-brand-soft);
+}
+
+.DocSearch-Button {
+  height: 2.25rem;
+  border: 1px solid var(--vp-c-border) !important;
+  border-radius: 0.5rem !important;
+  background: var(--vp-input-bg-color) !important;
+  box-shadow: none !important;
+}
+
+.DocSearch-Button:hover {
+  border-color: var(--vp-c-brand-1) !important;
+  background: var(--vp-c-brand-soft) !important;
+}
+
+/* Sidebar and table of contents */
+.VPSidebar {
+  border-right: 1px solid var(--vp-c-divider);
+}
+
+.VPSidebarItem .text {
+  line-height: 1.45;
+}
+
+.VPSidebarItem.level-0 > .item > .text {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.VPSidebarItem.level-1 > .item {
+  margin: 0.125rem 0;
+  padding: 0.375rem 0.625rem;
+  border-radius: 0.375rem;
+  transition: color 150ms ease, background-color 150ms ease;
+}
+
+.VPSidebarItem.level-1 > .item:hover {
+  color: var(--vp-c-text-1);
+  background: var(--vp-c-bg-soft);
+}
+
+.VPSidebarItem.level-1.is-active > .item {
+  color: var(--vp-c-brand-1);
+  background: var(--vp-c-brand-soft);
+}
+
+.VPDocAsideOutline .outline-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.VPDocAsideOutline .outline-link {
+  line-height: 1.45;
+}
+
+.VPDocAsideOutline .outline-link.active {
+  color: var(--vp-c-brand-1);
+}
+
+/* Article typography and content */
 .VPDoc.has-sidebar .content-container {
-  max-width: 920px;
+  max-width: 800px;
+}
+
+.vp-doc {
+  font-size: 1rem;
+  line-height: 1.75;
+}
+
+.vp-doc h1,
+.vp-doc h2,
+.vp-doc h3 {
+  color: var(--vp-c-text-1);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+}
+
+.vp-doc h1 {
+  font-size: 2.625rem;
+  line-height: 1.12;
+}
+
+.vp-doc h2 {
+  margin-top: 3rem;
+  padding-top: 1.25rem;
+  font-size: 2.1875rem;
+  line-height: 1.18;
+}
+
+.vp-doc h3 {
+  margin-top: 2.25rem;
+  font-size: 1.8125rem;
+  line-height: 1.25;
+}
+
+.vp-doc h4 {
+  font-size: 1.375rem;
+  line-height: 1.35;
+}
+
+.vp-doc p,
+.vp-doc li {
+  color: var(--vp-c-text-2);
+}
+
+.vp-doc strong {
+  color: var(--vp-c-text-1);
+  font-weight: 600;
+}
+
+.vp-doc a {
+  font-weight: 500;
+  text-underline-offset: 0.2em;
+}
+
+.vp-doc a:hover {
+  color: var(--vp-c-brand-2);
+  text-decoration-thickness: 2px;
+}
+
+.vp-doc hr {
+  margin: 3rem 0;
+  border-color: var(--vp-c-divider);
+}
+
+.vp-doc blockquote {
+  border-left-color: var(--vp-c-brand-1);
+  color: var(--vp-c-text-2);
+}
+
+.vp-doc :not(pre) > code {
+  border-radius: 0.3rem;
+  color: var(--vp-c-brand-1);
+  font-weight: 500;
 }
 
 .vp-doc div[class*='language-'] {
-  box-shadow: 0 0 0 1px rgb(127 127 127 / 15%);
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 0.5rem;
+  box-shadow: none;
+}
+
+.vp-doc div[class*='language-'] code {
+  font-variant-ligatures: none;
+}
+
+.vp-doc table {
+  display: table;
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  overflow: hidden;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 0.5rem;
+}
+
+.vp-doc th,
+.vp-doc td {
+  border: 0;
+  border-right: 1px solid var(--vp-c-divider);
+  border-bottom: 1px solid var(--vp-c-divider);
+}
+
+.vp-doc th:last-child,
+.vp-doc td:last-child {
+  border-right: 0;
+}
+
+.vp-doc tr:last-child td {
+  border-bottom: 0;
+}
+
+.vp-doc th {
+  color: var(--vp-c-text-1);
+  background: var(--vp-c-bg-soft);
+}
+
+.vp-doc tr:nth-child(2n) {
+  background: color-mix(in srgb, var(--vp-c-bg-soft) 55%, transparent);
+}
+
+.custom-block {
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 0.5rem;
+}
+
+.VPDocFooter {
+  border-top-color: var(--vp-c-divider);
+}
+
+.pager-link {
+  border-color: var(--vp-c-divider) !important;
+  border-radius: 0.5rem !important;
+  background: var(--vp-c-bg-soft);
+  box-shadow: none;
+  transition: border-color 150ms ease, background-color 150ms ease;
+}
+
+.pager-link:hover {
+  border-color: var(--vp-c-brand-1) !important;
+  background: var(--vp-c-brand-soft);
+}
+
+@media (max-width: 767px) {
+  .vp-doc h1 {
+    font-size: 2.1875rem;
+  }
+
+  .vp-doc h2 {
+    font-size: 1.8125rem;
+  }
+
+  .vp-doc h3 {
+    font-size: 1.5rem;
+  }
 }
