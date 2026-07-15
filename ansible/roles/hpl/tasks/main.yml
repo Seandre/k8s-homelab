@@ -1,3 +1,0 @@
----
-- name: Prepare top500-benchmark-derived HPL
-  ansible.builtin.import_tasks: prepare.yml

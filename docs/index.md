@@ -4,12 +4,12 @@ This site is the readable view of the Markdown documentation stored in the homel
 
 ## Required Build Order
 
-1. [Public DNS and trusted TLS](10-build/01-public-domain-tls.md)
-2. [`utility-01` automation server](10-build/02-utility-automation-server.md)
-3. [`pve-02` and `bastion-01`](10-build/03-pve-02-and-bastion.md)
-4. [Connected compact OKD](10-build/04-compact-okd.md)
+1. [Public DNS and trusted TLS](build/public-domain-tls.md)
+2. [`utility-01` automation server](build/utility-automation-server.md)
+3. [`pve-02` and `bastion-01`](build/pve-02-and-bastion.md)
+4. [Connected compact OKD](build/compact-okd.md)
 
-Read the [complete documentation order](00-overview/00-documentation-order.md) for optional projects and operations references. The [infrastructure reference](00-overview/01-infrastructure-reference.md) is the canonical source for hardware, addresses, storage, and DNS.
+Read the [complete documentation order](overview/documentation-order.md) for optional projects and operations references. The [infrastructure reference](overview/infrastructure-reference.md) is the canonical source for hardware, addresses, storage, and DNS.
 
 ## Current Platform
 

@@ -16,9 +16,11 @@ __pycache__/
 kubeconfig*
 .env
 .env.*
-docs-site/docusaurus/build/
-docs-site/docusaurus/node_modules/
-docs-site/docusaurus/.docusaurus/
+docs-site/vitepress/dist/
+docs-site/vitepress/node_modules/
+docs-site/vitepress/.vitepress/cache/
+# Ignore stale local artifacts left by the removed site package.
+docs-site/docusaurus/
 secrets/
 *.age
 # Terraform/OpenTofu future use
@@ -34,6 +36,8 @@ kubeconfig/
 # Generated files
 dist/
 build/
+!docs/build/
+!docs/build/**
 tmp/
 .cache/
 diagnostics/

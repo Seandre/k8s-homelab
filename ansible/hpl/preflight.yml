@@ -1,0 +1,73 @@
+---
+- name: Validate the selected Top500 profile
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  any_errors_fatal: true
+  tasks:
+    - name: Require the exact profile host set
+      ansible.builtin.assert:
+        that:
+          - groups['cluster'] | sort == hpl_expected_hosts | sort
+          - groups['cluster'] | length == 3
+        fail_msg: >-
+          The cluster overlay must contain exactly {{ hpl_expected_hosts | join(', ') }};
+          detected {{ groups['cluster'] | join(', ') }}.
+
+    - name: Require process grid to match the expected rank count
+      ansible.builtin.assert:
+        that:
+          - hpl_expected_process_p | int > 0
+          - hpl_expected_process_q | int > 0
+          - >-
+            (hpl_expected_process_p | int) * (hpl_expected_process_q | int)
+            == hpl_expected_ranks | int
+        fail_msg: >-
+          P x Q is {{ hpl_expected_process_p }} x {{ hpl_expected_process_q }}, but the
+          {{ hpl_profile }} profile requires {{ hpl_expected_ranks }} ranks.
+
+- name: Validate hosts before running the upstream Top500 benchmark
+  hosts: cluster
+  gather_facts: true
+  become: false
+  any_errors_fatal: true
+  tasks:
+
+    - name: Require inventory names to match remote short hostnames
+      ansible.builtin.assert:
+        that:
+          - inventory_hostname == ansible_hostname
+        fail_msg: >-
+          Inventory host {{ inventory_hostname }} reports hostname {{ ansible_hostname }}.
+          Upstream MPI requires these names to match.
+
+    - name: Require a supported Ubuntu release
+      ansible.builtin.assert:
+        that:
+          - ansible_distribution == 'Ubuntu'
+          - ansible_distribution_version is version('20.04', '>=')
+        fail_msg: >-
+          {{ inventory_hostname }} runs {{ ansible_distribution }}
+          {{ ansible_distribution_version }}; this homelab profile requires Ubuntu 20.04 or newer.
+
+    - name: Require the profile's logical CPU count on every host
+      ansible.builtin.assert:
+        that:
+          - ansible_processor_vcpus | int == hpl_expected_ranks_per_host[inventory_hostname] | int
+        fail_msg: >-
+          {{ inventory_hostname }} reports {{ ansible_processor_vcpus }} logical CPUs;
+          the {{ hpl_profile }} profile expects
+          {{ hpl_expected_ranks_per_host[inventory_hostname] }}.
+
+    - name: Require detected ranks to match the process grid
+      ansible.builtin.assert:
+        that:
+          - >-
+            groups['cluster']
+            | map('extract', hostvars, 'ansible_processor_vcpus')
+            | map('int')
+            | sum
+            == hpl_expected_ranks | int
+        fail_msg: >-
+          The cluster reports a different logical CPU total than the
+          {{ hpl_expected_ranks }} ranks required by P x Q.

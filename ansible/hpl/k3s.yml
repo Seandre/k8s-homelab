@@ -1,0 +1,39 @@
+---
+hpl_profile: k3s
+hpl_expected_hosts:
+  - k8s-control-01
+  - k8s-worker-01
+  - k8s-worker-02
+hpl_expected_ranks_per_host:
+  k8s-control-01: 2
+  k8s-worker-01: 4
+  k8s-worker-02: 4
+hpl_expected_process_p: 2
+hpl_expected_process_q: 5
+
+# The wrapper replaces this placeholder with /opt/top500/builds/<upstream-sha>.
+hpl_root: /opt/top500/builds/selected-by-wrapper
+hpl_root_owner: sean
+hpl_root_group: sean
+hpl_opts: "-flto=auto -O3 -march=native -mtune=native"
+mpich_version: "4.3.2"
+mpich_env_cflags: "-flto=auto -O3 -march=native -mtune=native"
+mpich_env_cxxflags: "-flto=auto -O3 -march=native -mtune=native"
+mpich_env_fflags: "-flto=auto -O3 -march=native -mtune=native -fallow-argument-mismatch"
+mpich_env_ldflags: "-flto=auto"
+mpich_with_device: "ch3:nemesis"
+linear_algebra_library: openblas
+linear_algebra_openblas_version: develop
+ssh_user: sean
+ssh_group: sean
+ssh_user_home: /home/sean
+
+# Upstream multiplies this per-node value by nodecount. 10 GiB x 3 = 30 GiB.
+ram_in_gb: 10
+nodecount: "{{ ansible_play_hosts | length | int }}"
+compile_nproc: "{{ ansible_facts['processor_nproc'] }}"
+hpl_dat_opts:
+  Ns: "{{ (((((ram_in_gb | int) * 1024 * 1024 * 1024 * (nodecount | int)) / 8) | root) * 0.90) | int }}"
+  NBs: 256
+  Ps: "{{ hpl_expected_process_p }}"
+  Qs: "{{ hpl_expected_process_q }}"

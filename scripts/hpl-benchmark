@@ -1,0 +1,247 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+readonly REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+readonly CACHE_ROOT="${HPL_BENCHMARK_CACHE_DIR:-${REPO_ROOT}/.cache/top500-benchmark}"
+readonly UPSTREAM_DIR="${CACHE_ROOT}/upstream"
+readonly REVISION_FILE="${CACHE_ROOT}/revision"
+readonly UPSTREAM_REPOSITORY="${HPL_TOP500_REPOSITORY:-https://github.com/geerlingguy/top500-benchmark.git}"
+
+usage() {
+  cat <<'EOF'
+Usage:
+  scripts/hpl-benchmark update
+  scripts/hpl-benchmark k3s
+  scripts/hpl-benchmark baremetal
+  scripts/hpl-benchmark <k3s|baremetal> benchmark
+EOF
+}
+
+die() {
+  printf 'hpl-benchmark: %s\n' "$*" >&2
+  exit 1
+}
+
+update_upstream() {
+  mkdir -p "${CACHE_ROOT}"
+
+  if [[ ! -d "${UPSTREAM_DIR}/.git" ]]; then
+    if [[ -e "${UPSTREAM_DIR}" ]]; then
+      die "${UPSTREAM_DIR} exists but is not an upstream Git checkout; move it aside and retry"
+    fi
+
+    git clone \
+      --no-checkout \
+      --origin origin \
+      --branch master \
+      --single-branch \
+      "${UPSTREAM_REPOSITORY}" \
+      "${UPSTREAM_DIR}"
+  fi
+
+  local configured_repository
+  configured_repository="$(git -C "${UPSTREAM_DIR}" remote get-url origin)"
+  if [[ "${configured_repository}" != "${UPSTREAM_REPOSITORY}" ]]; then
+    die "cached origin is ${configured_repository}, expected ${UPSTREAM_REPOSITORY}; move ${UPSTREAM_DIR} aside and retry"
+  fi
+
+  git -C "${UPSTREAM_DIR}" fetch \
+    --prune \
+    origin \
+    '+refs/heads/master:refs/remotes/origin/master'
+
+  local revision
+  revision="$(git -C "${UPSTREAM_DIR}" rev-parse --verify 'origin/master^{commit}')"
+  [[ "${revision}" =~ ^[0-9a-f]{40}$ ]] || die "origin/master did not resolve to a full commit SHA"
+
+  # This checkout is an ignored, wrapper-managed cache. Force restores it to
+  # the selected upstream tree if a previous interrupted run changed a file.
+  git -C "${UPSTREAM_DIR}" checkout --detach --force "${revision}"
+
+  local revision_tmp
+  revision_tmp="${REVISION_FILE}.tmp.$$"
+  printf '%s\n' "${revision}" > "${revision_tmp}"
+  mv "${revision_tmp}" "${REVISION_FILE}"
+
+  printf 'Selected top500-benchmark revision %s\n' "${revision}"
+}
+
+selected_revision() {
+  [[ -f "${REVISION_FILE}" ]] || die "no upstream revision is selected; run scripts/hpl-benchmark update first"
+  [[ -d "${UPSTREAM_DIR}/.git" ]] || die "the cached upstream checkout is missing; run scripts/hpl-benchmark update"
+
+  local revision
+  revision="$(tr -d '[:space:]' < "${REVISION_FILE}")"
+  [[ "${revision}" =~ ^[0-9a-f]{40}$ ]] || die "the cached revision is invalid; run scripts/hpl-benchmark update"
+  git -C "${UPSTREAM_DIR}" cat-file -e "${revision}^{commit}" 2>/dev/null || \
+    die "the selected revision is absent from the checkout; run scripts/hpl-benchmark update"
+
+  local checkout_revision
+  checkout_revision="$(git -C "${UPSTREAM_DIR}" rev-parse HEAD)"
+  [[ "${checkout_revision}" == "${revision}" ]] || \
+    die "the cached checkout is at ${checkout_revision}, not selected revision ${revision}; run scripts/hpl-benchmark update"
+  git -C "${UPSTREAM_DIR}" diff --quiet || \
+    die "the cached upstream checkout has tracked modifications; restore it with scripts/hpl-benchmark update"
+  git -C "${UPSTREAM_DIR}" diff --cached --quiet || \
+    die "the cached upstream checkout has staged modifications; restore it with scripts/hpl-benchmark update"
+
+  printf '%s\n' "${revision}"
+}
+
+format_command() {
+  printf '%q ' "$@"
+  printf '\n'
+}
+
+run_logged() {
+  local log_file="$1"
+  shift
+
+  set +e
+  "$@" 2>&1 | tee -a "${log_file}"
+  local status=${PIPESTATUS[0]}
+  set -e
+  return "${status}"
+}
+
+run_profile() {
+  local profile="$1"
+  local mode="$2"
+  local expected_ranks forks
+
+  case "${profile}" in
+    k3s)
+      expected_ranks=10
+      forks=1
+      ;;
+    baremetal)
+      expected_ranks=36
+      forks=3
+      ;;
+    *)
+      usage >&2
+      exit 2
+      ;;
+  esac
+
+  local revision short_revision
+  revision="$(selected_revision)"
+  short_revision="${revision:0:12}"
+
+  local profile_config inventory_overlay
+  profile_config="${REPO_ROOT}/ansible/hpl/${profile}.yml"
+  inventory_overlay="${REPO_ROOT}/ansible/hpl/inventory/${profile}.ini"
+  [[ -f "${profile_config}" ]] || die "missing profile config ${profile_config}"
+  [[ -f "${inventory_overlay}" ]] || die "missing inventory overlay ${inventory_overlay}"
+
+  # Upstream intentionally loads config.yml from its own playbook directory.
+  # The file is ignored by upstream Git and is regenerated for every run.
+  cp "${profile_config}" "${UPSTREAM_DIR}/config.yml"
+
+  local timestamp result_dir log_file build_root
+  timestamp="$(date -u +%Y%m%dT%H%M%SZ)"
+  result_dir="${REPO_ROOT}/benchmark-results/${timestamp}-${short_revision}"
+  log_file="${result_dir}/${profile}.log"
+  build_root="/opt/top500/builds/${revision}"
+  mkdir -p "${result_dir}"
+
+  local -a inventory_args
+  inventory_args=(
+    -i "${REPO_ROOT}/ansible/inventory/hosts.ini"
+    -i "${inventory_overlay}"
+  )
+
+  local -a preflight_command
+  preflight_command=(
+    ansible-playbook
+    "${REPO_ROOT}/ansible/hpl/preflight.yml"
+    "${inventory_args[@]}"
+    --forks "${forks}"
+    -e "@${profile_config}"
+    -e "hpl_expected_ranks=${expected_ranks}"
+  )
+
+  local -a upstream_command
+  upstream_command=(
+    ansible-playbook
+    "${UPSTREAM_DIR}/main.yml"
+    "${inventory_args[@]}"
+    --forks "${forks}"
+    -e "@${profile_config}"
+    -e "hpl_root=${build_root}"
+  )
+  if [[ "${mode}" == "benchmark" ]]; then
+    upstream_command+=(--tags benchmark)
+  else
+    upstream_command+=(--ask-become-pass)
+  fi
+
+  export ANSIBLE_CONFIG="${REPO_ROOT}/ansible.cfg"
+
+  {
+    printf 'top500_benchmark_revision=%s\n' "${revision}"
+    printf 'profile=%s\n' "${profile}"
+    printf 'mode=%s\n' "${mode}"
+    printf 'build_root=%s\n' "${build_root}"
+    printf 'started_utc=%s\n' "${timestamp}"
+    printf 'wrapper_command='
+    if [[ "${mode}" == "benchmark" ]]; then
+      format_command "$0" "${profile}" benchmark
+    else
+      format_command "$0" "${profile}"
+    fi
+    printf 'preflight_command='
+    format_command "${preflight_command[@]}"
+    printf 'upstream_command='
+    format_command "${upstream_command[@]}"
+    printf '\n'
+  } > "${log_file}"
+
+  printf 'Logging %s benchmark at revision %s to %s\n' "${profile}" "${revision}" "${log_file}"
+
+  local preflight_status=0
+  run_logged "${log_file}" "${preflight_command[@]}" || preflight_status=$?
+  printf '\npreflight_exit_status=%s\n' "${preflight_status}" >> "${log_file}"
+  if (( preflight_status != 0 )); then
+    printf 'upstream_exit_status=not-run\n' >> "${log_file}"
+    die "preflight failed for ${profile}; see ${log_file}"
+  fi
+
+  local upstream_status=0
+  run_logged "${log_file}" "${upstream_command[@]}" || upstream_status=$?
+  {
+    printf '\nupstream_exit_status=%s\n' "${upstream_status}"
+    printf 'finished_utc=%s\n' "$(date -u +%Y%m%dT%H%M%SZ)"
+  } >> "${log_file}"
+
+  if (( upstream_status != 0 )); then
+    die "upstream benchmark failed with status ${upstream_status}; see ${log_file}"
+  fi
+
+  printf 'Benchmark complete: %s\n' "${log_file}"
+}
+
+main() {
+  if (( $# == 1 )) && [[ "$1" == "update" ]]; then
+    update_upstream
+    return
+  fi
+
+  if (( $# == 1 )) && [[ "$1" == "k3s" || "$1" == "baremetal" ]]; then
+    run_profile "$1" full
+    return
+  fi
+
+  if (( $# == 2 )) && [[ "$2" == "benchmark" ]] && \
+      [[ "$1" == "k3s" || "$1" == "baremetal" ]]; then
+    run_profile "$1" benchmark
+    return
+  fi
+
+  usage >&2
+  exit 2
+}
+
+main "$@"

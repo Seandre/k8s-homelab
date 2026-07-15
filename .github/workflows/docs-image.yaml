@@ -7,7 +7,8 @@ on:
     paths:
       - docs/**
       - docs-site/Dockerfile
-      - docs-site/docusaurus/**
+      - docs-site/nginx.conf
+      - docs-site/vitepress/**
       - .dockerignore
       - .github/workflows/docs-image.yaml
   workflow_dispatch:
@@ -108,7 +109,8 @@ jobs:
             if ! git diff --quiet "${GITHUB_SHA}..origin/main" -- \
               docs \
               docs-site/Dockerfile \
-              docs-site/docusaurus \
+              docs-site/nginx.conf \
+              docs-site/vitepress \
               .dockerignore \
               .github/workflows/docs-image.yaml; then
               echo "A newer documentation change exists; its workflow will deploy it"

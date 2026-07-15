@@ -120,7 +120,7 @@ data:
         - Homelab Docs:
             href: https://docs.lab.seandre.dev
             description: Infrastructure documentation and runbooks
-            icon: docusaurus.png
+            icon: mdi-language-markdown
         - nginx test:
             href: https://nginx-test.lab.seandre.dev
             description: Ingress test app
