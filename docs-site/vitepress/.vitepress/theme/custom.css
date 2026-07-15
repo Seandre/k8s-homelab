@@ -47,7 +47,7 @@
   --docs-content-width: 800px;
   --docs-content-pad-x: 24px;
   --docs-content-gap: 16px;
-  --docs-toc-width: 200px;
+  --docs-toc-width: 172px;
 }
 
 @media (min-width: 800px) {
@@ -111,8 +111,18 @@ body {
 
 /* Navigation and search */
 .VPNavBar {
-  border-bottom: 1px solid var(--vp-c-divider);
+  border-bottom: 0;
   background: var(--vp-nav-bg-color) !important;
+}
+
+.Layout .VPNavBar .divider-line {
+  background-color: var(--vp-c-divider) !important;
+}
+
+@media (min-width: 960px) {
+  .Layout .VPNavBar.has-sidebar .divider {
+    padding-left: 0;
+  }
 }
 
 .VPNavBarTitle .title {
