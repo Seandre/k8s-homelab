@@ -29,7 +29,7 @@
   --vp-c-text-3: #78716c;
 
   --vp-nav-bg-color: #f1efed;
-  --vp-nav-bg-color: color-mix(in srgb, #f3f1ef 97%, #fed7aa 3%);
+  --vp-nav-bg-color: color-mix(in srgb, #f3f1ef 88%, transparent);
   --vp-nav-screen-bg-color: var(--vp-nav-bg-color);
   --vp-sidebar-bg-color: var(--vp-c-bg);
   --vp-local-nav-bg-color: var(--vp-nav-bg-color);
@@ -89,7 +89,7 @@
   --vp-c-text-3: #737373;
 
   --vp-nav-bg-color: #0f0b0a;
-  --vp-nav-bg-color: color-mix(in srgb, #0a0a0a 97%, #9a3412 3%);
+  --vp-nav-bg-color: color-mix(in srgb, #0a0a0a 88%, transparent);
   --vp-nav-screen-bg-color: var(--vp-nav-bg-color);
   --vp-sidebar-bg-color: var(--vp-c-bg);
   --vp-local-nav-bg-color: var(--vp-nav-bg-color);
@@ -121,6 +121,12 @@ body {
 .VPNavBar {
   border-bottom: 0;
   background: var(--vp-nav-bg-color) !important;
+}
+
+.VPNavBar,
+.VPLocalNav {
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
 }
 
 .Layout .VPNavBar .divider-line {
