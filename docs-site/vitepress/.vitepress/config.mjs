@@ -83,6 +83,15 @@ export default defineConfig({
       provider: 'local',
       options: {
         detailedView: true,
+        miniSearch: {
+          searchOptions: {
+            // Avoid false positives for short technical terms such as PXE/PVE.
+            // Prefix matching still supports partial searches (for example,
+            // "proxm" finds "Proxmox") without spelling substitutions.
+            fuzzy: false,
+            prefix: true,
+          },
+        },
       },
     },
     socialLinks: [
