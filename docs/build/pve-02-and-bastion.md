@@ -1030,7 +1030,7 @@ sudo rsync -aHAX \
 sudo systemctl start nexus
 ```
 
-The `rsync` example applies when the external target is mounted directly in the guest. When using the planned PBS target, do not add a separate guest mount merely to imitate this command: run the H2 task, make the stopped `bastion-01` backup, and complete the isolated restore drill in Operations 05. For any restore method, use the same pinned Nexus version, correct the data ownership when restoring files, and prove that repository configuration and a test artifact are present. Follow Sonatype's current [backup](https://help.sonatype.com/en/prepare-a-backup.html) and [H2 restore](https://help.sonatype.com/en/restore-an-h2-database.html) procedures.
+The `rsync` example applies when the external target is mounted directly in the guest. When using the current PBS target, do not add a separate guest mount merely to imitate this command: run the H2 task, make the stopped `bastion-01` backup, and complete the isolated restore drill in Operations 05. This checkpoint passed on 2026-07-18: the H2 task ran before the protected stopped backup, PBS verification succeeded, and the network-isolated restored Nexus returned the known 614-byte artifact with SHA-256 `7143e3f449c9dfb5d7b11041affa62dc54daae1746938fa4a9c25ee43d7aed78`. The daily H2 and PBS jobs now run at `02:30` PDT and `03:00`, respectively. For any restore method, use the same pinned Nexus version, correct the data ownership when restoring files, and prove that repository configuration and a test artifact are present. Follow Sonatype's current [backup](https://help.sonatype.com/en/prepare-a-backup.html) and [H2 restore](https://help.sonatype.com/en/restore-an-h2-database.html) procedures.
 
 ::: warning Recovery is the acceptance test
 A successful copy is not enough. Do not make Nexus an OKD dependency until the database and matching blob-store backup have been restored and a known test artifact has been downloaded from the restored instance.
@@ -1047,7 +1047,7 @@ The required Step 6 checkpoint is complete when:
 | ☐ | Nexus is reachable through trusted HTTPS on `nexus.lab.seandre.dev` and listens only on loopback behind HAProxy. |
 | ☐ | HAProxy owns the API, machine-config, and ingress frontends on the correct destination addresses. |
 | ☐ | Homepage shows live CPU, RAM, swap, and uptime for both `pve-02` and `bastion-01`. |
-| ☐ | Nexus database, blobs, configuration, and node identity have an external backup and a successful restore test. |
+| ☑ | Nexus database, blobs, configuration, and node identity have an external backup and a successful restore test. |
 | ☐ | No OKD private records or UniFi Forward Domain have been activated yet. |
 
 ## Optional Exercise: Create `k8s-worker-03`

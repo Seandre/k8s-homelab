@@ -7,7 +7,7 @@ This is the source of truth for homelab hardware, storage, VM sizing, network ad
 | Host | Status | Model | CPU | RAM | Disks | Management IP |
 |---|---|---|---|---:|---|---:|
 | `pve-01` | Active | HP EliteDesk 800 G6 Mini | Intel Core i5-10500T, 6C/12T | 64 GB | 256 GB NVMe system, 2 TB NVMe VM data | `192.168.40.20` |
-| `pve-02` | Hardware received | HP EliteDesk 800 G6 Mini | Intel Core i5-10500T, 6C/12T | 32 GB | 512 GB storage | `192.168.40.25` |
+| `pve-02` | Active; standalone PVE host | HP EliteDesk 800 G6 Mini | Intel Core i5-10500T, 6C/12T | 32 GB | 512 GB storage | `192.168.40.25` |
 | `okd-cp-01` | Hardware received; SSD pending | HP EliteDesk 805 G8 Mini | AMD Ryzen 5 PRO 5650GE, 6C/12T | 16 GB, 32 GB planned | 1 TB Patriot Memory P400 Lite SSD pending installation | `192.168.40.26` |
 | `okd-cp-02` | Hardware received; SSD pending | HP EliteDesk 805 G8 Mini | AMD Ryzen 5 PRO 5650GE, 6C/12T | 16 GB, 32 GB planned | 1 TB Patriot Memory P400 Lite SSD pending installation | `192.168.40.27` |
 | `okd-cp-03` | Hardware received; SSD pending | HP EliteDesk 805 G8 Mini | AMD Ryzen 5 PRO 5650GE, 6C/12T | 16 GB, 32 GB planned | 1 TB Patriot Memory P400 Lite SSD pending installation | `192.168.40.28` |
@@ -21,7 +21,9 @@ This is the source of truth for homelab hardware, storage, VM sizing, network ad
 | `pve-01` | `local` | 256 GB NVMe | ISOs, snippets, and small local files |
 | `pve-01` | `local-lvm` | 256 GB NVMe | Default thin pool; avoid for primary VMs |
 | `pve-01` | `vmdata` | 2 TB NVMe | Primary VM disks |
-| `pve-02` | `local-lvm` | 512 GB storage | Planned primary VM disks on the standalone host |
+| `pve-01` | `pbs-pve02-restore` | Network access to `pbs-01` datastore `pve02-backups` | Restore-only access for the isolated `bastion-01` recovery drill |
+| `pve-02` | `local-lvm` | 512 GB storage | Primary VM disks on the standalone host |
+| `pve-02` | `pbs-pve02` | Network access to `pbs-01` datastore `pve02-backups` | Daily stopped backup of `bastion-01` |
 
 Storage identifiers are local to each standalone host. The single-disk `pve-02` does not need a storage ID named `vmdata` merely to match `pve-01`.
 
@@ -33,8 +35,8 @@ Storage identifiers are local to each standalone host. The single-disk `pve-02` 
 | `k8s-worker-01` | Active | `pve-01` | 4 | 16 GB | 150 GB | `vmdata` | `192.168.40.22` |
 | `k8s-worker-02` | Active | `pve-01` | 4 | 16 GB | 150 GB | `vmdata` | `192.168.40.23` |
 | `utility-01` | Active | `pve-01` | 2 | 8 GB | 100 GB | `vmdata` | `192.168.40.24` |
-| `pbs-01` | Planned for the Nexus recovery checkpoint | `pve-01` | 4 | 6 GB | 64 GB OS + 500 GB datastore | `vmdata` | proposed `192.168.40.34`; verify before reserving |
-| `bastion-01` | Planned after `pve-02` | `pve-02` | 4 | 12 GB | ~300 GB | `local-lvm` | `192.168.40.33` plus `.29`, `.31` |
+| `pbs-01` | Active; Nexus recovery acceptance passed | `pve-01` | 4 | 6 GB | 64 GB OS + 500 GB datastore | `vmdata` | `192.168.40.34` |
+| `bastion-01` | Active | `pve-02` | 4 | 12 GB | 300 GB | `local-lvm` | `192.168.40.33` plus `.29`, `.31` |
 
 Build `utility-01` with [Build 02: Utility Automation Server](../build/utility-automation-server.md). `bastion-01` is a separate infrastructure dependency providing `dnsmasq`, HAProxy, and Nexus.
 
@@ -53,7 +55,7 @@ The three `okd-cp-*` hosts are physical, schedulable OKD control-plane nodes rat
 | Ingress VIP | `192.168.40.30` |
 | OKD API / ingress VIPs | `192.168.40.29` / `192.168.40.31` |
 | Bastion management | `192.168.40.33` |
-| PBS management | proposed `192.168.40.34`; verify in UniFi before reserving |
+| PBS management | `pbs-01.lab.seandre.dev` (`192.168.40.34`); active and reserved |
 
 The switch port/native network carries VLAN `40`, so Proxmox VM NIC VLAN tags remain blank. The workstation LAN is `192.168.10.0/24`; routing and security policy between it and the server VLAN are handled by UniFi.
 
@@ -72,7 +74,7 @@ Infrastructure names resolve to their host addresses. Kubernetes application nam
 | `pve-02.lab.home.arpa` | `192.168.40.25` |
 | `bastion-01.lab.home.arpa` | `192.168.40.33` |
 | `nexus.lab.seandre.dev` | `192.168.40.33` |
-| `pbs-01.lab.home.arpa` | proposed `192.168.40.34`; create only after collision check |
+| `pbs-01.lab.seandre.dev` | `192.168.40.34` |
 | `okd-cp-01.okd.lab.seandre.dev` | `192.168.40.26` |
 | `okd-cp-02.okd.lab.seandre.dev` | `192.168.40.27` |
 | `okd-cp-03.okd.lab.seandre.dev` | `192.168.40.28` |

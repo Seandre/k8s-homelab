@@ -1,8 +1,32 @@
 # Operations 05: Proxmox Backup Server on `pve-01`
 
-**Status:** Planned — complete this runbook during the Nexus backup checkpoint in [Build 03](../build/pve-02-and-bastion.md#back-up-and-restore-nexus-before-relying-on-it).
+**Status:** Implemented — the PBS build, application-consistent backup, automatic verification, protected recovery point, and network-isolated Nexus artifact restore test passed.
 
 This runbook builds `pbs-01` as a Proxmox Backup Server VM on `pve-01`. Its first responsibility is to hold recoverable backups of `bastion-01`, which runs on the separate physical host `pve-02`. The first successful backup is not the completion gate: restore that backup into an isolated VM and download a known Nexus artifact before allowing Nexus to become an OKD dependency.
+
+## Implementation Record: 2026-07-18
+
+The PBS side of this runbook is implemented:
+
+- VM `201` (`pbs-01`) is active on `pve-01` with 4 vCPU, 6144 MiB RAM, a 64 GiB OS disk, a separate 500 GiB datastore disk, QEMU guest-agent support, and start-at-boot enabled.
+- The installed release is PBS `4.2.3`; the source `4.2-1` ISO matched the published SHA-256 checksum `2fb299deac3929253712c9c3dfc9237edbe70af83c8848467616b771a1d5453e` before installation.
+- `192.168.40.34` did not answer ping, ARP, or expected service probes before use and is now reserved in UniFi for MAC `BC:24:11:50:00:34`. Canonical name `pbs-01.lab.seandre.dev` resolves to `.34` from the workstation and both Proxmox hosts.
+- PBS uses the no-subscription production repository, has no pending package updates, and runs kernel `7.0.14-5-pve` with `proxmox-backup-proxy` and `qemu-guest-agent` active.
+- The `pve02-backups` ext4 datastore is mounted from the separate 500 GiB disk at `/mnt/datastore/pve02-backups`, with approximately 466 GiB initially available.
+- New backups are verified automatically. Pruning runs daily at `04:30` with `keep-last=3`, `keep-daily=7`, `keep-weekly=4`, and `keep-monthly=3`; garbage collection runs Sunday at `05:30`; full reverification runs monthly.
+- Restricted identity `pve-02@pbs!pve` has only inherited `Datastore.Backup` on `/datastore/pve02-backups`. Its one-time token secret is held in the local password manager, not in this repository.
+- PBS, Postfix, its self-signed certificate CN/SANs, and both Proxmox storage definitions use canonical name `pbs-01.lab.seandre.dev`. The pinned certificate SHA-256 fingerprint is `72:ed:05:58:cd:4b:cd:b7:0e:27:50:fb:1b:62:30:79:ba:d3:41:ae:56:fd:79:70:f2:32:4c:0b:b3:5e:8f:20`.
+- `pve-02` has active backup storage `pbs-pve02`; `pve-01` has active restore-only storage `pbs-pve02-restore`, restricted to its actual Proxmox node name `pve01`.
+- A stopped baseline backup of `bastion-01` completed at `2026-07-18T06:37:37Z`; PBS recorded both the backup and automatic verification tasks as `OK`. Its first network-isolated restore proved that Nexus `3.94.0-12` starts and answers its loopback status endpoint.
+- Nexus task `Backup H2 database before PBS` (`h2.backup.task`) is enabled daily at `02:30` PDT, before the VM backup. Its post-artifact run completed `OK` at `2026-07-18T07:10:48Z` and produced `nexus-2026-07-18-07-10-48.zip`, containing `nexus.mv.db`.
+- The harmless recovery artifact is in repository `maven-releases` at `dev/seandre/homelab/nexus-recovery-probe/2026.07.18/nexus-recovery-probe-2026.07.18.pom`. An authenticated download from production was 614 bytes with SHA-256 `7143e3f449c9dfb5d7b11041affa62dc54daae1746938fa4a9c25ee43d7aed78`.
+- The final stopped acceptance backup completed at `2026-07-18T07:13:01Z`. PBS recorded the backup and automatic verification tasks as `OK`. Because the restricted token intentionally cannot modify snapshots, the snapshot was protected afterward with PBS administrative credentials instead of expanding the token role.
+- The acceptance snapshot restored to temporary VM `202` on `pve-01`. Its NIC was removed before first boot, start-at-boot was disabled, and memory was limited to 8 GiB. Nexus became ready on loopback, the H2 ZIP was present, and the restored artifact downloaded as 614 bytes with the exact production SHA-256. VM `202` and `vm-202-disk-0` were deleted after the test, and production Nexus remained healthy.
+- Enabled backup job `bastion-01-daily-pbs` runs daily at `03:00` on `pve-02` in `stop` mode. PBS pruning follows at `04:30`.
+- At acceptance, the `vmdata` thin pool was 5.09 percent allocated, leaving 94.91 percent physical headroom; the PBS datastore had approximately 464 GiB available. The monthly procedure below keeps both layers in the capacity review.
+- Installer answer files and generated unattended-install ISOs were removed after installation. The checksum-verified source ISO remains on `pve-01` `local` storage.
+
+Application recovery acceptance is complete. The proof covers the matching Nexus database, blob store, configuration, and node identity in one stopped whole-VM recovery point; it does not remove the failure-domain limitation described below.
 
 ## Scope and Failure-Domain Boundary
 
@@ -24,19 +48,19 @@ Do not:
 
 When a NAS or separate backup host is added, make it a second independently recoverable copy or move PBS onto dedicated hardware. RAID in a future NAS improves disk availability but does not replace a second backup copy.
 
-## Target Design
+## Implemented Target Design
 
-The `.34` address is proposed because it follows the current infrastructure range. Confirm in UniFi that it is unused before creating a reservation or DNS record.
+The `.34` address is active after network-level collision checks and is reserved in UniFi as `pbs-01.lab.seandre.dev`.
 
-| Item | Planned value |
+| Item | Implemented value |
 |---|---|
 | Proxmox host | `pve-01` |
-| VM name | `pbs-01` |
-| VM address | `192.168.40.34/24`, pending collision check and reservation |
-| Private name | `pbs-01.lab.home.arpa` |
+| VM | `201` (`pbs-01`) |
+| VM address | `192.168.40.34/24`; active and reserved in UniFi |
+| Private name | `pbs-01.lab.seandre.dev`; canonical FQDN and private DNS record |
 | Gateway and DNS | `192.168.40.1` |
 | Network | `vmbr0`; native `Servers` network; no VM VLAN tag |
-| PBS release | Current supported PBS 4.x installer, with version and checksum recorded at execution time |
+| PBS release | `4.2.3`, installed from checksum-verified PBS `4.2-1` media and fully updated |
 | CPU | 4 vCPU; CPU type `host` |
 | Memory | 6144 MiB; ballooning disabled |
 | OS disk | 64 GiB on `pve-01` `vmdata` |
@@ -45,7 +69,8 @@ The `.34` address is proposed because it follows the current infrastructure rang
 | Datastore filesystem | `ext4` inside the PBS VM |
 | Datastore name | `pve02-backups` |
 | Initial protected VM | `bastion-01` on standalone `pve-02` |
-| PBS management URL | `https://192.168.40.34:8007` until separate private DNS/TLS work is completed |
+| PBS management URL | `https://pbs-01.lab.seandre.dev:8007` |
+| PBS certificate SHA-256 | `72:ed:05:58:cd:4b:cd:b7:0e:27:50:fb:1b:62:30:79:ba:d3:41:ae:56:fd:79:70:f2:32:4c:0b:b3:5e:8f:20` |
 
 The sizing follows the current [PBS system requirements](https://pbs.proxmox.com/docs/system-requirements.html): at least 4 GiB for PBS plus additional memory for the datastore. Use `ext4` rather than nested ZFS because the datastore is a virtual disk, not direct access to redundant physical disks. PBS supports an `ext4` datastore as documented in [Backup Storage](https://pbs.proxmox.com/docs/storage.html).
 
@@ -67,7 +92,7 @@ Before claiming `.34`:
 
 1. Search UniFi clients, DHCP reservations, and DNS records for `192.168.40.34`.
 2. From the `Servers` network, confirm that neither a ping nor a neighbor entry identifies an existing device. Silence alone does not prove that an address is free.
-3. Create the UniFi reservation and private Host (A) record for `pbs-01.lab.home.arpa` only after the inventory check passes.
+3. Create the UniFi reservation and private Host (A) record for `pbs-01.lab.seandre.dev` only after the inventory check passes.
 4. Do not create a public Cloudflare A or AAAA record.
 
 ## Phase 2: Create and Install `pbs-01`
@@ -79,7 +104,7 @@ Create the VM in the `pve-01` UI with the values in the target-design table. Att
 Use these installer network values after the `.34` reservation is confirmed:
 
 ```text
-Hostname: pbs-01.lab.home.arpa
+Hostname: pbs-01.lab.seandre.dev
 Address:  192.168.40.34/24
 Gateway:  192.168.40.1
 DNS:      192.168.40.1
@@ -87,7 +112,7 @@ DNS:      192.168.40.1
 
 After the first boot:
 
-1. Open `https://192.168.40.34:8007` and sign in as `root@pam`.
+1. Open `https://pbs-01.lab.seandre.dev:8007` and sign in as `root@pam`.
 2. If there is no subscription, disable the enterprise repository and add the PBS 4 no-subscription repository under **Administration → Updates → Repositories**. Do not enable the test repository.
 3. Install all available updates and reboot.
 4. Install and enable `qemu-guest-agent`, then enable the guest-agent option for the VM in Proxmox.
@@ -107,8 +132,8 @@ systemctl is-active qemu-guest-agent
 From `utility-01` or a trusted client, validate the management path without disabling certificate verification globally:
 
 ```bash
-ping -c 3 192.168.40.34
-nc -vz 192.168.40.34 8007
+ping -c 3 pbs-01.lab.seandre.dev
+nc -vz pbs-01.lab.seandre.dev 8007
 ```
 
 The initial PBS certificate is self-signed. Record its SHA-256 fingerprint for Proxmox VE integration:
@@ -136,10 +161,10 @@ Configure a conservative initial policy:
 | Function | Initial policy |
 |---|---|
 | Verify new backups | Enabled |
-| Prune | Daily after the backup window |
+| Prune | Daily at `04:30`, after the planned backup window |
 | Retention | `keep-last=3`, `keep-daily=7`, `keep-weekly=4`, `keep-monthly=3` |
-| Garbage collection | Weekly, after pruning and outside the backup window |
-| Full reverification | Monthly |
+| Garbage collection | Sunday at `05:30` |
+| Full reverification | Monthly with `ignore-verified=false` |
 | Notifications | Errors for backup, prune, garbage-collection, and verification tasks |
 
 Pruning removes snapshot references; garbage collection later reclaims unreferenced chunks. Review the current [PBS maintenance documentation](https://pbs.proxmox.com/docs/maintenance.html) before changing their order or schedules. Monitor both the filesystem and the underlying `vmdata` thin pool; free space reported inside `pbs-01` does not replace host-level thin-pool monitoring.
@@ -171,7 +196,7 @@ On `pve-02`, open **Datacenter → Storage → Add → Proxmox Backup Server** a
 | Field | Value |
 |---|---|
 | ID | `pbs-pve02` |
-| Server | `192.168.40.34` |
+| Server | `pbs-01.lab.seandre.dev` |
 | Username | `pve-02@pbs!pve` |
 | Password | The API-token secret |
 | Datastore | `pve02-backups` |
@@ -184,7 +209,7 @@ The hosts remain standalone; PBS is network storage and does not require a Proxm
 pvesm status --storage pbs-pve02
 ```
 
-Also add the same PBS datastore to `pve-01` as `pbs-pve02-restore`, restricted to node `pve-01`. This second storage entry exists only so the restore drill can create a disposable VM on the larger `vmdata` pool. Use the same verified fingerprint and token. Proxmox documents this native standalone-host integration in [Proxmox VE Integration](https://pbs.proxmox.com/docs/pve-integration.html).
+Also add the same PBS datastore to `pve-01` as `pbs-pve02-restore`, restricted to the actual Proxmox node name `pve01`. This storage entry is active and exists only so the restore drill can create a disposable VM on the larger `vmdata` pool. Use the same verified fingerprint and token. Proxmox documents this native standalone-host integration in [Proxmox VE Integration](https://pbs.proxmox.com/docs/pve-integration.html).
 
 ## Phase 6: Make the First Nexus Recovery Point
 
@@ -203,10 +228,10 @@ In the `pve-02` Proxmox UI, create the first backup of `bastion-01` with:
 | Storage | `pbs-pve02` |
 | Mode | `Stop` |
 | Compression | PBS default |
-| Protected | Enable for the acceptance-test recovery point |
+| Protected | Leave disabled in the PVE job; protect the accepted snapshot afterward as a PBS administrator |
 | Notes | Nexus version, H2 task completion, and test-artifact checksum |
 
-The first backup may take substantially longer than later deduplicated backups. `Stop` mode is intentional for this acceptance test: availability is not yet a requirement, and no Nexus database or blob writes can continue while the VM disks are copied. Confirm that Proxmox restarts `bastion-01` after the job, then verify DNS, HAProxy, and Nexus again.
+The first backup may take substantially longer than later deduplicated backups. `Stop` mode is intentional for this acceptance test: availability is not yet a requirement, and no Nexus database or blob writes can continue while the VM disks are copied. Confirm that Proxmox restarts `bastion-01` after the job, then verify DNS, HAProxy, and Nexus again. The restricted `DatastoreBackup` token cannot set a snapshot's protected flag; preserve least privilege and apply that flag from PBS with administrative credentials after the backup verifies successfully.
 
 In PBS, confirm that the snapshot completed without warnings and that verification succeeds. Do not count a partially completed or unverified snapshot as a recovery point.
 
@@ -245,7 +270,7 @@ Never start the restored VM with its production NIC connected merely to make the
 
 ## Phase 8: Schedule and Operate the Backup
 
-After the recovery drill succeeds, create a scheduled `bastion-01` backup job on `pve-02`. Begin with a daily low-traffic window and `Stop` mode. Schedule the Nexus H2 task before that window and alert on either task failing. Revisit the downtime choice only after a vendor-supported online database-and-blob procedure is documented and tested; a crash-consistent snapshot alone does not replace application consistency.
+After the recovery drill succeeds, create a scheduled `bastion-01` backup job on `pve-02`. Job `bastion-01-daily-pbs` is enabled daily at `03:00` in `Stop` mode. Nexus task `Backup H2 database before PBS` is enabled daily at `02:30` PDT with its notification condition set to failure. Revisit the downtime choice only after a vendor-supported online database-and-blob procedure is documented and tested; a crash-consistent snapshot alone does not replace application consistency.
 
 At least monthly:
 
@@ -262,16 +287,16 @@ Do not add `pve-01` VMs to this job and call them protected from `pve-01` loss. 
 
 | Done | Acceptance criterion |
 |:---:|---|
-| ☐ | `.34` was confirmed unused and reserved before `pbs-01` used it. |
-| ☐ | `pbs-01` runs a supported PBS 4.x release with current updates. |
-| ☐ | The OS and `pve02-backups` datastore use separate virtual disks on `vmdata`. |
-| ☐ | Host-level capacity monitoring leaves at least 20 percent physical `vmdata` headroom. |
-| ☐ | `pve-02` reaches `pbs-pve02` using a restricted API token and verified certificate fingerprint. |
-| ☐ | The H2 task and stopped `bastion-01` backup completed successfully. |
-| ☐ | PBS verification completed without errors. |
-| ☐ | A restored, network-isolated VM started the same pinned Nexus release. |
-| ☐ | The known test artifact downloaded from the restored Nexus instance and matched its original SHA-256 checksum. |
-| ☐ | Prune, garbage-collection, verification, and failure-notification policies are scheduled. |
-| ☐ | The limitations of a PBS datastore located on `pve-01` are preserved in the recovery documentation. |
+| ☑ | `.34` was confirmed unused and reserved before `pbs-01` used it. |
+| ☑ | `pbs-01` runs a supported PBS 4.x release with current updates. |
+| ☑ | The OS and `pve02-backups` datastore use separate virtual disks on `vmdata`. |
+| ☑ | Host-level capacity monitoring leaves at least 20 percent physical `vmdata` headroom. |
+| ☑ | `pve-02` reaches `pbs-pve02` using a restricted API token and verified certificate fingerprint. |
+| ☑ | The H2 task and stopped `bastion-01` backup completed successfully. |
+| ☑ | PBS verification completed without errors. |
+| ☑ | A restored, network-isolated VM started the same pinned Nexus release. |
+| ☑ | The known test artifact downloaded from the restored Nexus instance and matched its original SHA-256 checksum. |
+| ☑ | Prune, garbage-collection, verification, and failure-notification policies are scheduled. |
+| ☑ | The limitations of a PBS datastore located on `pve-01` are preserved in the recovery documentation. |
 
-Only after every recovery criterion passes may the Nexus backup checkbox in Build 03 be marked complete.
+All recovery criteria passed on 2026-07-18. The Nexus backup checkbox in Build 03 may be marked complete.
