@@ -28,8 +28,8 @@
   --vp-c-text-2: oklch(44.4% 0.011 73.639);
   --vp-c-text-3: #78716c;
 
-  /* Match the Neovim terminal glass: 60% background with a 15px blur. */
-  --docs-glass-bg: rgb(243 241 239 / 60%);
+  /* Neutral, lighter glass for the brighter page surface. */
+  --docs-glass-bg: rgb(250 250 250 / 45%);
   --docs-glass-blur: 15px;
   --vp-nav-bg-color: var(--docs-glass-bg);
   --vp-nav-screen-bg-color: var(--vp-nav-bg-color);
@@ -90,6 +90,7 @@
   --vp-c-text-2: oklch(70.8% 0 0);
   --vp-c-text-3: #737373;
 
+  /* Match the Neovim terminal glass: 60% background with a 15px blur. */
   --docs-glass-bg: rgb(10 10 10 / 60%);
   --vp-nav-bg-color: var(--docs-glass-bg);
   --vp-nav-screen-bg-color: var(--vp-nav-bg-color);
@@ -145,6 +146,13 @@ body {
 
 .Layout .VPNavBar .divider-line {
   background-color: var(--vp-c-divider) !important;
+}
+
+/* Keep VitePress's page dimmer from tinting the translucent mobile menu. */
+@media (max-width: 959px) {
+  .Layout > .VPBackdrop {
+    left: min(320px, calc(100vw - 64px));
+  }
 }
 
 @media (min-width: 960px) {
