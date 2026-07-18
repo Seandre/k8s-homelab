@@ -28,10 +28,12 @@
   --vp-c-text-2: oklch(44.4% 0.011 73.639);
   --vp-c-text-3: #78716c;
 
-  --vp-nav-bg-color: #f1efed;
-  --vp-nav-bg-color: color-mix(in srgb, #f3f1ef 88%, transparent);
+  /* Match the Neovim terminal glass: 60% background with a 15px blur. */
+  --docs-glass-bg: rgb(243 241 239 / 60%);
+  --docs-glass-blur: 15px;
+  --vp-nav-bg-color: var(--docs-glass-bg);
   --vp-nav-screen-bg-color: var(--vp-nav-bg-color);
-  --vp-sidebar-bg-color: var(--vp-c-bg);
+  --vp-sidebar-bg-color: var(--docs-glass-bg);
   --vp-local-nav-bg-color: var(--vp-nav-bg-color);
   --vp-code-bg: rgb(234 88 12 / 9%);
   --vp-code-block-bg: #f3f1ef;
@@ -88,10 +90,10 @@
   --vp-c-text-2: oklch(70.8% 0 0);
   --vp-c-text-3: #737373;
 
-  --vp-nav-bg-color: #0f0b0a;
-  --vp-nav-bg-color: color-mix(in srgb, #0a0a0a 88%, transparent);
+  --docs-glass-bg: rgb(10 10 10 / 60%);
+  --vp-nav-bg-color: var(--docs-glass-bg);
   --vp-nav-screen-bg-color: var(--vp-nav-bg-color);
-  --vp-sidebar-bg-color: var(--vp-c-bg);
+  --vp-sidebar-bg-color: var(--docs-glass-bg);
   --vp-local-nav-bg-color: var(--vp-nav-bg-color);
   --vp-code-bg: rgb(251 146 60 / 12%);
   --vp-code-block-bg: #111113;
@@ -118,15 +120,27 @@ body {
 }
 
 /* Navigation and search */
-.VPNavBar {
-  border-bottom: 0;
-  background: var(--vp-nav-bg-color) !important;
+.VPNavBar,
+.VPNavScreen,
+.VPLocalNav,
+.VPSidebar,
+.VPDoc .aside-container {
+  background-color: var(--docs-glass-bg) !important;
+  -webkit-backdrop-filter: blur(var(--docs-glass-blur));
+  backdrop-filter: blur(var(--docs-glass-blur));
 }
 
-.VPNavBar,
-.VPLocalNav {
-  -webkit-backdrop-filter: blur(12px);
-  backdrop-filter: blur(12px);
+.VPNavBar {
+  border-bottom: 0;
+}
+
+/* Avoid stacked glass layers making the desktop nav look opaque. */
+.Layout .VPNavBar .title,
+.Layout .VPNavBar .content-body,
+.Layout .VPSidebar .curtain,
+.Layout .VPDoc .aside-curtain {
+  background: transparent !important;
+  background-color: transparent !important;
 }
 
 .Layout .VPNavBar .divider-line {
