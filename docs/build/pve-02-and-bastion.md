@@ -753,7 +753,10 @@ Secure the hook and test the renewal path:
 ```bash
 sudo chmod 0750 /etc/letsencrypt/renewal-hooks/deploy/haproxy-nexus
 sudo /etc/letsencrypt/renewal-hooks/deploy/haproxy-nexus
-sudo certbot renew --dry-run
+sudo certbot renew \
+  --cert-name nexus.lab.seandre.dev \
+  --dry-run \
+  --run-deploy-hooks
 systemctl list-timers certbot.timer
 ```
 
@@ -1058,7 +1061,7 @@ The required Step 6 checkpoint is complete when:
 | ☑ | Homepage shows live CPU, RAM, swap, and uptime for both `pve-02` and `bastion-01`. |
 | ☑ | Nexus database, blobs, configuration, and node identity have an external backup and a successful restore test. |
 | ☑ | No OKD private records or UniFi Forward Domain have been activated yet. |
-| ☐ | The installed Certbot deploy hook matches the documented safe redirection and `certbot renew --dry-run` succeeds. |
+| ☐ | The installed Certbot deploy hook matches the documented safe redirection and `certbot renew --cert-name nexus.lab.seandre.dev --dry-run --run-deploy-hooks` succeeds. |
 
 ## Optional Exercise: Create `k8s-worker-03`
 
