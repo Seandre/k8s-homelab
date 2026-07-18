@@ -9,8 +9,8 @@ KOReader Sync is managed by Argo CD from `kubernetes/apps/kosync` and selected b
 | Namespace | `kosync` |
 | Image | `koreader/kosync:v2.1.1` |
 | Service port | `17200` |
-| Hostname | `kosync.lab.home.arpa` |
-| TLS issuer | `homelab-ca` |
+| Hostname | `kosync.lab.seandre.dev` |
+| TLS issuer | `letsencrypt-production` |
 | Persistent data | 1 GiB `local-path` PVC mounted at `/var/lib/redis` |
 
 The upstream all-in-one container bundles Redis. The PVC survives pod replacement, but `local-path` storage is node-local and is not resilient to loss of that node.
@@ -31,7 +31,7 @@ kubectl -n argocd get application homelab-apps
 kubectl -n kosync get deploy,pod,svc,ingress,pvc,certificate
 kubectl -n kosync rollout status deployment/kosync
 kubectl -n kosync logs deployment/kosync
-curl -v https://kosync.lab.home.arpa/healthcheck
+curl -v https://kosync.lab.seandre.dev/healthcheck
 ```
 
 Expected state:
@@ -39,8 +39,8 @@ Expected state:
 - `homelab-apps` is `Synced` and `Healthy`.
 - The deployment is available and its pod is `Running`.
 - The PVC is `Bound`.
-- `kosync-tls` is ready.
-- The health check succeeds from a client that trusts the homelab CA.
+- `kosync-public-tls` is ready.
+- The health check succeeds through the publicly trusted certificate.
 
 ## Account Bootstrap
 
@@ -70,10 +70,10 @@ This proves pod replacement, not node-loss recovery. Do not rely on the data unt
 Set the custom sync server to:
 
 ```text
-https://kosync.lab.home.arpa
+https://kosync.lab.seandre.dev
 ```
 
-Clients must trust the homelab root CA. The `utility-01` desktop procedure is documented in [Optional 01: Utility Desktop and KOReader](utility-desktop-koreader.md).
+Clients use the publicly trusted certificate and do not need the homelab root CA for this endpoint. The `utility-01` desktop procedure is documented in [Optional 01: Utility Desktop and KOReader](utility-desktop-koreader.md).
 
 ## Next Hardening Steps
 

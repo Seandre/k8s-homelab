@@ -27,6 +27,29 @@ Work through failures in this order:
 5. TLS certificate readiness and client trust.
 6. Application logs and configuration.
 
+## `pve-02`, `bastion-01`, and PBS Fast Triage
+
+The implemented path is `bastion-01` VM `200` on standalone `pve-02`, backed up to `pbs-01.lab.seandre.dev` on `pve-01`. Start with non-secret checks:
+
+```bash
+ssh pve-02 'pvesm status; qm status 200'
+dig A pve-02.lab.seandre.dev +short
+dig A bastion-01.lab.seandre.dev +short
+dig A pbs-01.lab.seandre.dev +short
+dig @192.168.40.33 A ubuntu.com +short
+curl --fail --head https://nexus.lab.seandre.dev
+```
+
+On `pve-02`, confirm the guest services and backup storage without printing credentials:
+
+```bash
+qm guest exec 200 -- systemctl is-active dnsmasq haproxy nexus glances
+pvesm status --storage pbs-pve02
+pvesh get /cluster/backup --output-format yaml
+```
+
+If Nexus is healthy but certificate renewal is under investigation, compare the live Certbot deployment hook with the safe version in Build 03 before running a dry-run. The hook must concatenate the public chain and private key into a protected temporary PEM using output redirection; never allow either key material or an authorization header into diagnostics.
+
 ## Argo CD and Grafana Credentials
 
 Treat these values as secrets. Keep the current passwords in the password manager and do not paste them into tickets, chat, logs, or Git.
@@ -121,7 +144,7 @@ kubectl -n argocd rollout restart deployment/argocd-server
 If a hostname does not resolve, bypass DNS while preserving the TLS hostname:
 
 ```bash
-curl -k -I --resolve home.lab.home.arpa:443:192.168.40.30 https://home.lab.home.arpa
+curl -I --resolve home.lab.seandre.dev:443:192.168.40.30 https://home.lab.seandre.dev
 ```
 
 If an ingress certificate is missing, inspect the ClusterIssuer, Certificate, and cert-manager pods:
@@ -132,7 +155,7 @@ kubectl get certificate -A
 kubectl -n cert-manager get pods
 ```
 
-A ready certificate plus an HTTPS `404` usually means an ingress match problem, not a certificate problem. Browser warnings are expected until the client trusts the homelab root CA.
+A ready certificate plus an HTTPS `404` usually means an ingress match problem, not a certificate problem. Current `lab.seandre.dev` application certificates are publicly trusted; a browser warning on those names is not expected and should trigger certificate-chain, clock, and DNS checks.
 
 ## Homepage CrashLoopBackOff
 

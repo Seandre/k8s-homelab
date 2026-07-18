@@ -2,6 +2,8 @@
 
 This is the source of truth for homelab hardware, storage, VM sizing, network addresses, and internal DNS names. Project-specific build steps live in the linked tutorials.
 
+Last live verification: 2026-07-18.
+
 ## Physical Hosts
 
 | Host | Status | Model | CPU | RAM | Disks | Management IP |
@@ -36,7 +38,7 @@ Storage identifiers are local to each standalone host. The single-disk `pve-02` 
 | `k8s-worker-02` | Active | `pve-01` | 4 | 16 GB | 150 GB | `vmdata` | `192.168.40.23` |
 | `utility-01` | Active | `pve-01` | 2 | 8 GB | 100 GB | `vmdata` | `192.168.40.24` |
 | `pbs-01` | Active; Nexus recovery acceptance passed | `pve-01` | 4 | 6 GB | 64 GB OS + 500 GB datastore | `vmdata` | `192.168.40.34` |
-| `bastion-01` | Active | `pve-02` | 4 | 12 GB | 300 GB | `local-lvm` | `192.168.40.33` plus `.29`, `.31` |
+| `bastion-01` | Active; protected by PBS and restore-tested | `pve-02` | 4 | 12 GB | 300 GB | `local-lvm` | `192.168.40.33` plus `.29`, `.31` |
 
 Build `utility-01` with [Build 02: Utility Automation Server](../build/utility-automation-server.md). `bastion-01` is a separate infrastructure dependency providing `dnsmasq`, HAProxy, and Nexus.
 
@@ -50,8 +52,8 @@ The three `okd-cp-*` hosts are physical, schedulable OKD control-plane nodes rat
 | Subnet | `192.168.40.0/24` |
 | VLAN ID | `40` |
 | Gateway and DNS | `192.168.40.1` |
-| Internal domain | `lab.home.arpa` |
-| Private public-domain alias zone | `lab.seandre.dev` |
+| Installed legacy guest domain | `lab.home.arpa` |
+| Canonical private split-DNS zone | `lab.seandre.dev` |
 | Ingress VIP | `192.168.40.30` |
 | OKD API / ingress VIPs | `192.168.40.29` / `192.168.40.31` |
 | Bastion management | `192.168.40.33` |
@@ -59,7 +61,7 @@ The three `okd-cp-*` hosts are physical, schedulable OKD control-plane nodes rat
 
 The switch port/native network carries VLAN `40`, so Proxmox VM NIC VLAN tags remain blank. The workstation LAN is `192.168.10.0/24`; routing and security policy between it and the server VLAN are handled by UniFi.
 
-## Internal DNS
+## Active Internal DNS
 
 Infrastructure names resolve to their host addresses. Kubernetes application names resolve to the shared Traefik ingress VIP.
 
@@ -69,32 +71,38 @@ Infrastructure names resolve to their host addresses. Kubernetes application nam
 | `k8s-control-01.lab.seandre.dev` | `192.168.40.21` |
 | `k8s-worker-01.lab.seandre.dev` | `192.168.40.22` |
 | `k8s-worker-02.lab.seandre.dev` | `192.168.40.23` |
-| `utility-01.lab.seandre.dev` | CNAME to `utility-01.lab.home.arpa` (`192.168.40.24`) |
-| `utility-01.lab.home.arpa` | `192.168.40.24` |
-| `pve-02.lab.home.arpa` | `192.168.40.25` |
-| `bastion-01.lab.home.arpa` | `192.168.40.33` |
-| `nexus.lab.seandre.dev` | `192.168.40.33` |
+| `utility-01.lab.seandre.dev` | `192.168.40.24` |
+| `pve-02.lab.seandre.dev` | `192.168.40.25` |
+| `bastion-01.lab.seandre.dev` | `192.168.40.33` |
+| `nexus.lab.seandre.dev` | CNAME to `bastion-01.lab.seandre.dev` (`192.168.40.33`) |
 | `pbs-01.lab.seandre.dev` | `192.168.40.34` |
+| `ingress.lab.seandre.dev` | `192.168.40.30` |
+| `argocd.lab.seandre.dev` | CNAME to `ingress.lab.seandre.dev` |
+| `grafana.lab.seandre.dev` | CNAME to `ingress.lab.seandre.dev` |
+| `home.lab.seandre.dev` | CNAME to `ingress.lab.seandre.dev` |
+| `nginx-test.lab.seandre.dev` | CNAME to `ingress.lab.seandre.dev` |
+| `kosync.lab.seandre.dev` | CNAME to `ingress.lab.seandre.dev` |
+| `docs.lab.seandre.dev` | CNAME to `ingress.lab.seandre.dev` |
+
+The `utility-01` operating-system hostname remains `utility-01.lab.home.arpa`, but its active network DNS name is `utility-01.lab.seandre.dev`. The old infrastructure and application `.home.arpa` names no longer resolve and must not be used in current connection examples.
+
+The public-domain rows are private split-DNS records. Cloudflare remains authoritative publicly but contains no homelab A/AAAA records; it is used for ACME TXT challenges.
+
+## Reserved or Planned DNS
+
+These names and addresses are reserved for later work but intentionally do not resolve yet:
+
+| Name | Planned address or target |
+|---|---:|
 | `okd-cp-01.okd.lab.seandre.dev` | `192.168.40.26` |
 | `okd-cp-02.okd.lab.seandre.dev` | `192.168.40.27` |
 | `okd-cp-03.okd.lab.seandre.dev` | `192.168.40.28` |
 | `api.okd.lab.seandre.dev` | `192.168.40.29` |
 | `api-int.okd.lab.seandre.dev` | CNAME to `api.okd.lab.seandre.dev` |
 | `*.apps.okd.lab.seandre.dev` | `192.168.40.31` |
-| `k8s-worker-03.lab.home.arpa` | `192.168.40.32` |
-| `argocd.lab.home.arpa` | `192.168.40.30` |
-| `grafana.lab.home.arpa` | `192.168.40.30` |
-| `home.lab.home.arpa` | `192.168.40.30` |
-| `nginx-test.lab.home.arpa` | `192.168.40.30` |
-| `kosync.lab.home.arpa` | `192.168.40.30` |
-| `argocd.lab.seandre.dev` | `192.168.40.30` |
-| `grafana.lab.seandre.dev` | `192.168.40.30` |
-| `home.lab.seandre.dev` | `192.168.40.30` |
-| `nginx-test.lab.seandre.dev` | `192.168.40.30` |
-| `kosync.lab.seandre.dev` | `192.168.40.30` |
-| `docs.lab.seandre.dev` | `192.168.40.30` |
+| `k8s-worker-03.lab.seandre.dev` | `192.168.40.32`; optional exercise only |
 
-The public-domain rows are private split-DNS records. Cloudflare remains authoritative publicly but contains no homelab A/AAAA records; it is used for ACME TXT challenges. `bastion-01` serves the OKD forward and reverse records, with UniFi conditionally forwarding `okd.lab.seandre.dev` to `.33`.
+`bastion-01` already forwards unmatched DNS queries, but the OKD records and UniFi Forward Domain remain inactive until Gate 3 of Build 04.
 
 SSH, Mosh, Proxmox, and optional RDP are internal administration services. They do not belong behind Kubernetes ingress and should not be forwarded from the public internet.
 

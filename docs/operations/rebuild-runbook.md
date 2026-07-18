@@ -4,6 +4,8 @@ This runbook restores the homelab control plane and GitOps-managed resources. Ha
 
 The steps below describe the current VM-based k3s cluster. The planned compact OKD cluster has separate installation and failure tests in [Build 04: Connected Compact OKD](../build/compact-okd.md). Do not mix kubeconfigs, ingress VIPs, installer artifacts, or restore targets.
 
+`bastion-01` has a separate recovery path: restore its protected PBS snapshot from `pbs-01` by following [Operations 05: Proxmox Backup Server](proxmox-backup-server.md). Do not rebuild an empty Nexus instance over a recoverable backup.
+
 ## Recovery Boundaries
 
 Git contains Kubernetes desired state, Ansible automation, and documentation. It does not contain:
@@ -30,6 +32,7 @@ Sealed Secrets adds a separate root of trust that Git cannot restore. Before usi
 9. Verify the controller can decrypt existing ciphertext, then let the root application reconcile infrastructure, encrypted secrets, monitoring, and apps from Git.
 10. Restore external DNS records and client CA trust.
 11. Restore and test persistent application data.
+12. If `bastion-01` was lost, restore the protected PBS recovery point, preserve network isolation until conflicts are ruled out, then verify DNS, HAProxy, Nexus, and the known artifact checksum.
 
 ## Proxmox and Ubuntu
 
@@ -138,11 +141,12 @@ kubectl get pods -A
 kubectl get ingress -A
 kubectl get certificate -A
 kubectl get pvc -A
-curl -k -I https://argocd.lab.home.arpa
-curl -k -I https://grafana.lab.home.arpa
-curl -k -I https://home.lab.home.arpa
-curl -k -I https://nginx-test.lab.home.arpa
-curl -k -I https://kosync.lab.home.arpa
+curl --fail --head https://argocd.lab.seandre.dev
+curl --fail --head https://grafana.lab.seandre.dev
+curl --fail --head https://home.lab.seandre.dev
+curl --fail --head https://nginx-test.lab.seandre.dev
+curl --fail --head https://kosync.lab.seandre.dev
+curl --fail --head https://docs.lab.seandre.dev
 ```
 
 Recovery is complete when nodes are ready, Argo CD applications are synced and healthy, workloads are running, certificates are ready, endpoints respond, and restored application data has been verified.

@@ -576,7 +576,7 @@ kubectl -n monitoring get secret grafana-admin-credentials \
   -o go-template='{{range $k, $v := .data}}{{$k}}{{"\n"}}{{end}}' | sort
 ```
 
-Log in to `https://grafana.lab.home.arpa` as `admin` using the password-manager entry. Do not copy the password into terminal history.
+Log in to `https://grafana.lab.seandre.dev` as `admin` using the password-manager entry. Do not copy the password into terminal history.
 
 Capture a digest without printing the password:
 

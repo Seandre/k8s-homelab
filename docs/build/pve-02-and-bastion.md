@@ -1,18 +1,21 @@
 # Build 03: `pve-02` and `bastion-01`
 
+> Status: operational as of 2026-07-18. `pve-02` and VM `200` (`bastion-01`) are active; DNS forwarding, HAProxy, Nexus, Glances, trusted Nexus HTTPS, and the PBS recovery test have passed. The remaining live issue is the Nexus Certbot deployment hook, which must be corrected and pass a renewal dry-run.
+
 This project integrates the HP EliteDesk 800 G6 Mini as standalone `pve-02`. Its first required workload is `bastion-01`, which provides DNS, HAProxy, and Nexus for [Build 04: Compact OKD](compact-okd.md). The older `k8s-worker-03` exercise below is optional and must not consume the bastion's resources or addresses.
 
 Do not join `pve-01` and `pve-02` into a Proxmox cluster during this first pass. A two-node Proxmox cluster needs a quorum plan, such as a qdevice or a third voter. The first goal is simple capacity and operational practice without risking the working `pve-01` setup.
 
 Start this project only after completing the [`utility-01` automation-server validation](utility-automation-server.md#step-9-validate-the-automation-server). Run Ansible, Kubernetes, and Git commands from its repository checkout. [Optional 01: Utility Desktop and KOReader](../optional/utility-desktop-koreader.md) is not a prerequisite.
 
-## Target Design
+## Implemented Design
 
 | Item | Value |
 |---|---|
 | Proxmox hostname | `pve-02` |
 | Proxmox FQDN | `pve-02.lab.seandre.dev` |
 | Proxmox IP | `192.168.40.25` |
+| Proxmox release | PVE `9.2.2` at the 2026-07-18 audit |
 | Model | HP EliteDesk 800 G6 Mini |
 | CPU | Intel Core i5-10500T |
 | RAM | 32 GB |
@@ -20,9 +23,15 @@ Start this project only after completing the [`utility-01` automation-server val
 | Network | UniFi `Servers`, VLAN ID `40` |
 | Gateway/DNS | `192.168.40.1` |
 | Initial Proxmox storage | `local-lvm` on the 512 GB device |
-| First VM | `bastion-01` |
+| First VM | VM `200` (`bastion-01`), start-at-boot enabled |
 | First VM IPs | `.33` management, `.29` OKD API, `.31` OKD ingress |
 | First VM size | 4 vCPU, 12 GB RAM, approximately 300 GB disk |
+| Backup system | `pbs-01.lab.seandre.dev` on the separate physical host `pve-01` |
+| Backup timing | Nexus H2 at `09:30` UTC (`02:30` PDT / `01:30` PST), then stopped PBS backup at `03:00` Proxmox host time |
+
+::: info Implemented backup decision
+We ended up using Proxmox Backup Server, not a NAS and not a second directory inside `bastion-01`. `pbs-01` is VM `201` on `pve-01`; `pve-02` writes to datastore `pve02-backups` through storage `pbs-pve02`, and `pve-01` has restore access through `pbs-pve02-restore`. The protected acceptance snapshot was restored on `pve-01` with its NIC removed, and the known Nexus artifact matched its original SHA-256. See [Operations 05: Proxmox Backup Server](../operations/proxmox-backup-server.md) for the implementation record and recovery procedure.
+:::
 
 ## Step 1: Confirm the Project Prerequisites
 
@@ -1018,7 +1027,7 @@ Nexus stores metadata and configuration in its database and repository content i
 /opt/sonatype/sonatype-work/nexus3/keystores/node
 ```
 
-The destination must be outside `bastion-01`, such as a NAS, Proxmox Backup Server, or another independently protected system. A second directory on the same VM disk is not a backup. For the current two-host architecture, follow [Operations 05: Proxmox Backup Server on `pve-01`](../operations/proxmox-backup-server.md). It creates a PBS VM and datastore on the physically separate `pve-01`, then uses a stopped whole-VM backup to preserve the database, blobs, configuration, and node identity together.
+The destination must be outside `bastion-01`, such as a NAS, Proxmox Backup Server, or another independently protected system. A second directory on the same VM disk is not a backup. The implemented choice for this architecture is [Operations 05: Proxmox Backup Server on `pve-01`](../operations/proxmox-backup-server.md): PBS VM `201` and its datastore are on the physically separate `pve-01`, and a stopped whole-VM backup preserves the database, blobs, configuration, and node identity together. No NAS is required for this first cross-host recovery boundary.
 
 For a consistent periodic offline copy, stop Nexus and copy the complete data directory to a timestamped directory on the external target:
 
@@ -1030,7 +1039,7 @@ sudo rsync -aHAX \
 sudo systemctl start nexus
 ```
 
-The `rsync` example applies when the external target is mounted directly in the guest. When using the current PBS target, do not add a separate guest mount merely to imitate this command: run the H2 task, make the stopped `bastion-01` backup, and complete the isolated restore drill in Operations 05. This checkpoint passed on 2026-07-18: the H2 task ran before the protected stopped backup, PBS verification succeeded, and the network-isolated restored Nexus returned the known 614-byte artifact with SHA-256 `7143e3f449c9dfb5d7b11041affa62dc54daae1746938fa4a9c25ee43d7aed78`. The daily H2 and PBS jobs now run at `02:30` PDT and `03:00`, respectively. For any restore method, use the same pinned Nexus version, correct the data ownership when restoring files, and prove that repository configuration and a test artifact are present. Follow Sonatype's current [backup](https://help.sonatype.com/en/prepare-a-backup.html) and [H2 restore](https://help.sonatype.com/en/restore-an-h2-database.html) procedures.
+The `rsync` example is an alternative for a future external target mounted directly in the guest; it is not the current backup path. With the implemented PBS target, do not add a separate guest mount merely to imitate it: run the H2 task, make the stopped `bastion-01` backup, and complete the isolated restore drill in Operations 05. This checkpoint passed on 2026-07-18: the H2 task ran before the protected stopped backup, PBS verification succeeded, and the network-isolated restored Nexus returned the known 614-byte artifact with SHA-256 `7143e3f449c9dfb5d7b11041affa62dc54daae1746938fa4a9c25ee43d7aed78`. The H2 task runs at `09:30` UTC (`02:30` PDT / `01:30` PST), before the `03:00` Proxmox backup. For any restore method, use the same pinned Nexus version, correct the data ownership when restoring files, and prove that repository configuration and a test artifact are present. Follow Sonatype's current [backup](https://help.sonatype.com/en/prepare-a-backup.html) and [H2 restore](https://help.sonatype.com/en/restore-an-h2-database.html) procedures.
 
 ::: warning Recovery is the acceptance test
 A successful copy is not enough. Do not make Nexus an OKD dependency until the database and matching blob-store backup have been restored and a known test artifact has been downloaded from the restored instance.
@@ -1040,15 +1049,16 @@ The required Step 6 checkpoint is complete when:
 
 | Done | Acceptance criterion |
 |:---:|---|
-| ☐ | `bastion-01` has 4 vCPU, 12 GiB RAM, and approximately 300 GiB on `local-lvm`. |
-| ☐ | `.33`, `.29`, and `.31` survive a reboot on the same interface. |
-| ☐ | SSH and Nexus management are limited to the trusted LAN/VPN networks. |
-| ☐ | `dnsmasq` answers on `.33:53` and forwards unmatched public TXT queries. |
-| ☐ | Nexus is reachable through trusted HTTPS on `nexus.lab.seandre.dev` and listens only on loopback behind HAProxy. |
-| ☐ | HAProxy owns the API, machine-config, and ingress frontends on the correct destination addresses. |
-| ☐ | Homepage shows live CPU, RAM, swap, and uptime for both `pve-02` and `bastion-01`. |
+| ☑ | `bastion-01` has 4 vCPU, 12 GiB RAM, and approximately 300 GiB on `local-lvm`. |
+| ☑ | `.33`, `.29`, and `.31` survive a reboot on the same interface. |
+| ☑ | SSH and Nexus management are limited to the trusted LAN/VPN networks. |
+| ☑ | `dnsmasq` answers on `.33:53` and forwards unmatched public TXT queries. |
+| ☑ | Nexus is reachable through trusted HTTPS on `nexus.lab.seandre.dev` and listens only on loopback behind HAProxy. |
+| ☑ | HAProxy owns the API, machine-config, and ingress frontends on the correct destination addresses. |
+| ☑ | Homepage shows live CPU, RAM, swap, and uptime for both `pve-02` and `bastion-01`. |
 | ☑ | Nexus database, blobs, configuration, and node identity have an external backup and a successful restore test. |
-| ☐ | No OKD private records or UniFi Forward Domain have been activated yet. |
+| ☑ | No OKD private records or UniFi Forward Domain have been activated yet. |
+| ☐ | The installed Certbot deploy hook matches the documented safe redirection and `certbot renew --dry-run` succeeds. |
 
 ## Optional Exercise: Create `k8s-worker-03`
 

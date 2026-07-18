@@ -14,7 +14,7 @@ Keep RDP internal to trusted LAN or VPN networks. Do not expose it through Kuber
 | Desktop | XFCE |
 | Remote desktop | xrdp on TCP `3389` |
 | Application | KOReader Desktop |
-| Sync endpoint | `https://kosync.lab.home.arpa` |
+| Sync endpoint | `https://kosync.lab.seandre.dev` |
 | Access | Trusted LAN/VPN clients only |
 
 ## Step 1: Confirm the Automation Server Prerequisite
@@ -22,7 +22,7 @@ Keep RDP internal to trusted LAN or VPN networks. Do not expose it through Kuber
 Connect to `utility-01` and confirm the core build is healthy:
 
 ```bash
-ssh sean@utility-01.lab.home.arpa
+ssh sean@utility-01.lab.seandre.dev
 kubectl get nodes -o wide
 git -C ~/Developer/k8s-homelab status
 sudo ufw status verbose
@@ -60,7 +60,7 @@ systemctl status xrdp --no-pager
 From a Mac or iPad RDP client, connect to:
 
 ```text
-utility-01.lab.home.arpa:3389
+utility-01.lab.seandre.dev:3389
 ```
 
 Sign in as `sean`. If the session is blank, confirm that `~/.xsession` contains only `startxfce4`, then restart xrdp.
@@ -99,36 +99,26 @@ chmod +x ~/Applications/koreader.AppImage
 Launch KOReader from the RDP desktop and configure sync against:
 
 ```text
-https://kosync.lab.home.arpa
+https://kosync.lab.seandre.dev
 ```
 
-## Step 5: Trust the Homelab Root CA
+## Step 5: Verify Public Certificate Trust
 
-The KOReader Sync endpoint uses an internal certificate from `homelab-ca`. Export the public root certificate from cert-manager and add it to Ubuntu's system trust store:
+The current KOReader Sync endpoint uses a publicly trusted Let's Encrypt certificate. No homelab root CA installation is required for `kosync.lab.seandre.dev`. Verify the certificate path without disabling TLS verification:
 
 ```bash
-kubectl -n cert-manager get secret homelab-root-ca \
-  -o jsonpath='{.data.tls\.crt}' \
-  | base64 -d \
-  | sudo tee /usr/local/share/ca-certificates/homelab-root-ca.crt >/dev/null
-sudo update-ca-certificates
+curl -v https://kosync.lab.seandre.dev/healthcheck
 ```
 
-Verify the certificate path without disabling TLS verification:
-
-```bash
-curl -v https://kosync.lab.home.arpa/healthcheck
-```
-
-If `curl -k` works but normal `curl` fails, the service path is working and client trust is still the problem.
+If `curl -k` works but normal `curl` fails, inspect DNS, the served certificate chain, and the client clock. Do not make insecure mode the normal client configuration.
 
 ## Step 6: Validate the Desktop
 
 Confirm all of the following:
 
-- `utility-01.lab.home.arpa:3389` opens an XFCE desktop.
+- `utility-01.lab.seandre.dev:3389` opens an XFCE desktop.
 - KOReader launches.
-- KOReader can reach `https://kosync.lab.home.arpa`.
+- KOReader can reach `https://kosync.lab.seandre.dev`.
 - `sudo ufw status verbose` limits TCP `3389` to trusted subnets.
 
 ## Step 7: Disable RDP When It Is Not Needed

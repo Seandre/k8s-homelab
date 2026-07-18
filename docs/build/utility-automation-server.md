@@ -1,6 +1,8 @@
 # Build 02: Utility Automation Server
 
-This tutorial builds `utility-01` as the homelab automation server. Its job is to hold administration clients, the repository checkout, install tools, and protected kubeconfigs. It is not the OKD bastion: `bastion-01` later provides DNS, HAProxy, and Nexus.
+> Status: operational. `utility-01` is active with Git, Ansible, and `kubectl`. A 2026-07-18 audit found that `oc`, `openshift-install`, and `oc-mirror` are not installed yet, so finish those client steps before generating OKD installation media.
+
+This tutorial builds `utility-01` as the homelab automation server. Its job is to hold administration clients, the repository checkout, install tools, and protected kubeconfigs. It is not the OKD bastion: the active `bastion-01` provides DNS, HAProxy, and Nexus.
 
 Do not install desktop tools, user apps, `kubectl`, or daily admin utilities on the Proxmox host. Keep Proxmox focused on running VMs. Put convenience tools in `utility-01`.
 
@@ -13,7 +15,8 @@ The optional GUI is documented separately in [Optional 01: Utility Desktop and K
 | Item | Value |
 |---|---|
 | Hostname | `utility-01` |
-| FQDN | `utility-01.lab.home.arpa` |
+| Installed guest FQDN | `utility-01.lab.home.arpa` |
+| Active management DNS name | `utility-01.lab.seandre.dev` |
 | IP | `192.168.40.24` |
 | Gateway/DNS | `192.168.40.1` |
 | Domain | `lab.home.arpa` |
@@ -96,7 +99,7 @@ From your Mac or iPad SSH client:
 
 ```bash
 ssh sean@192.168.40.24
-ssh sean@utility-01.lab.home.arpa
+ssh sean@utility-01.lab.seandre.dev
 ```
 
 If the IP works but the name does not, fix the UniFi DNS record before moving on.
@@ -170,13 +173,13 @@ Use an iPad terminal app that supports SSH keys. If it also supports Mosh, use M
 SSH:
 
 ```bash
-ssh sean@utility-01.lab.home.arpa
+ssh sean@utility-01.lab.seandre.dev
 ```
 
 Mosh:
 
 ```bash
-mosh sean@utility-01.lab.home.arpa
+mosh sean@utility-01.lab.seandre.dev
 ```
 
 Start persistent work inside `tmux` after connecting:
@@ -272,8 +275,8 @@ git clone https://github.com/seandre/k8s-homelab.git
 Run these checks from the Mac, iPad, and `utility-01` as appropriate:
 
 ```bash
-ssh sean@utility-01.lab.home.arpa
-mosh sean@utility-01.lab.home.arpa
+ssh sean@utility-01.lab.seandre.dev
+mosh sean@utility-01.lab.seandre.dev
 ```
 
 Inside `utility-01`:
@@ -318,7 +321,7 @@ SSH should normally remain enabled because it is the primary admin path.
 
 ## Next Project
 
-The automation server is ready when Ansible, Git, the existing k3s kubeconfig, and the pinned OKD clients have been validated. Continue with [Build 03: `pve-02` and `bastion-01`](pve-02-and-bastion.md), then [Build 04: Compact OKD](compact-okd.md). The optional GUI remains separate in [Optional 01: Utility Desktop and KOReader](../optional/utility-desktop-koreader.md).
+The automation server is ready when Ansible, Git, the existing k3s kubeconfig, and the pinned OKD clients have been validated. Build 03 and its PBS recovery gate are complete; after installing the missing OKD clients, continue with [Build 04: Compact OKD](compact-okd.md). The optional GUI remains separate in [Optional 01: Utility Desktop and KOReader](../optional/utility-desktop-koreader.md).
 
 ## Operating Rules
 

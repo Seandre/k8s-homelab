@@ -1,8 +1,10 @@
 # Operations 04: Proxmox and VM Names under `seandre.dev`
 
-**Status:** Complete — verified from a trusted macOS client on 2026-07-12.
+**Status:** Complete — initially verified on 2026-07-12; DNS names rechecked on 2026-07-18.
 
-This tutorial makes the active Proxmox host available at `https://pve-01.lab.seandre.dev:8006` with a publicly trusted certificate and adds private `lab.seandre.dev` aliases for the VMs hosted on it.
+This tutorial makes the primary Proxmox host available at `https://pve-01.lab.seandre.dev:8006` with a publicly trusted certificate and adds private `lab.seandre.dev` aliases for the VMs hosted on it.
+
+`pve-02.lab.seandre.dev`, `bastion-01.lab.seandre.dev`, and `pbs-01.lab.seandre.dev` were added later and are documented in Build 03 and Operations 05. This runbook does not claim a publicly trusted Proxmox certificate for `pve-02`; PBS intentionally uses its pinned self-signed certificate for PVE integration.
 
 The design keeps every management address private. Cloudflare publishes only temporary ACME TXT challenges; UniFi answers the host and VM names on trusted LAN and VPN clients. Proxmox obtains and renews its own certificate so hypervisor access does not depend on Kubernetes, Traefik, or cert-manager.
 
@@ -14,7 +16,7 @@ The design keeps every management address private. Cloudflare publishes only tem
 | k3s control plane VM | `k8s-control-01.lab.seandre.dev` | `k8s-control-01.lab.home.arpa`; `192.168.40.21` | None required |
 | k3s worker VM | `k8s-worker-01.lab.seandre.dev` | `k8s-worker-01.lab.home.arpa`; `192.168.40.22` | None required |
 | k3s worker VM | `k8s-worker-02.lab.seandre.dev` | `k8s-worker-02.lab.home.arpa`; `192.168.40.23` | None required |
-| Automation VM | `utility-01.lab.seandre.dev` | `utility-01.lab.home.arpa`; `192.168.40.24` | None required |
+| Automation VM | `utility-01.lab.seandre.dev` | installed guest FQDN `utility-01.lab.home.arpa`; `192.168.40.24` | None required |
 
 Do not rename the installed Proxmox node merely to add the new DNS name. The live node certificate shows that its installed name is `pve01`. Renaming an installed Proxmox node changes paths and cluster-filesystem assumptions; an ACME certificate may use `pve-01.lab.seandre.dev` without changing the node name.
 
@@ -22,7 +24,7 @@ Do not rename the installed Proxmox node merely to add the new DNS name. The liv
 
 Before changing UniFi, capture the current DNS table and DHCP reservations as described in [Build 01: Publicly Trusted TLS](../build/public-domain-tls.md).
 
-The live UniFi audit found no legacy DNS records for `pve01` or the three k3s VMs. Their addresses are unique, so create direct Host (A) records. `utility-01.lab.home.arpa` already owns the A record for `.24`, so use a CNAME only for its new alias:
+The initial UniFi audit found no legacy DNS records for `pve01` or the three k3s VMs. Their addresses are unique, so create direct Host (A) records. The current DNS table also uses a direct A record for `utility-01.lab.seandre.dev`; its installed `.home.arpa` guest FQDN is no longer a network DNS record.
 
 | Type | Name | Address or canonical target |
 |---|---|---|
@@ -30,11 +32,11 @@ The live UniFi audit found no legacy DNS records for `pve01` or the three k3s VM
 | A | `k8s-control-01.lab.seandre.dev` | `192.168.40.21` |
 | A | `k8s-worker-01.lab.seandre.dev` | `192.168.40.22` |
 | A | `k8s-worker-02.lab.seandre.dev` | `192.168.40.23` |
-| CNAME | `utility-01.lab.seandre.dev` | `utility-01.lab.home.arpa` |
+| A | `utility-01.lab.seandre.dev` | `192.168.40.24` |
 
 If UniFi later reports that an address is already owned by a different A record, preserve that working record and use it as the CNAME target rather than deleting it blindly.
 
-In UniFi Network 9.4, open **Settings → Policy Table → Create New Policy → DNS**. In Network 9.3, open **Settings → Policy Engine → DNS → Create DNS Record**. Select **Host (A)** for the first four rows and **Alias (CNAME)** for `utility-01`.
+In UniFi Network 9.4, open **Settings → Policy Table → Create New Policy → DNS**. In Network 9.3, open **Settings → Policy Engine → DNS → Create DNS Record**. Select **Host (A)** for every row.
 
 These records belong only in UniFi. Do not add public Cloudflare A, AAAA, or CNAME records for them.
 

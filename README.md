@@ -10,7 +10,7 @@ Kubernetes homelab built on Proxmox VE.
 - Boot/system disk: 256 GB NVMe
 - VM/data disk: 2 TB NVMe
 - Hypervisor: Proxmox VE
-- Additional virtualization host received: HP EliteDesk 800 G6 Mini (`pve-02`) with Intel Core i5-10500T, 32 GB RAM, and 512 GB storage
+- Active standalone virtualization host: HP EliteDesk 800 G6 Mini (`pve-02`) with Intel Core i5-10500T, 32 GB RAM, and 512 GB storage
 - Bare-metal cluster hardware received: three matching HP EliteDesk 805 G8 Minis, each with an AMD Ryzen 5 PRO 5650GE, 16 GB RAM, and a 1 TB Patriot Memory P400 Lite SSD waiting to be installed
 
 Start with the [Documentation Order](docs/overview/documentation-order.md). The [Infrastructure Reference](docs/overview/infrastructure-reference.md) contains the complete hardware, storage, VM, network, and DNS layout.
@@ -32,12 +32,12 @@ Target stack:
 
 ## Current Status
 
-Last verified: 2026-06-30.
+Last verified: 2026-07-18.
 
 - Proxmox VE installed on the 256 GB NVMe in the HP EliteDesk mini PC
 - 2 TB NVMe configured as Proxmox LVM-thin storage `vmdata`
 - UniFi `Servers` network on VLAN ID `40` selected for homelab infrastructure
-- Proxmox host reachable at `192.168.40.20`; `pve-01.lab.seandre.dev` is the target private management name
+- Primary Proxmox host reachable at `192.168.40.20` and `pve-01.lab.seandre.dev`
 - Kubernetes VMs cloned, resized, networked, and prepared
 - Three-node k3s cluster is running k3s `v1.36.2+k3s1`; all nodes are `Ready`:
   - `k8s-control-01` at `192.168.40.21`
@@ -50,14 +50,20 @@ Last verified: 2026-06-30.
 - MetalLB and Traefik ingress are installed through Argo CD
 - MetalLB assigns the reserved ingress VIP `192.168.40.30` to the Traefik `LoadBalancer` service
 - cert-manager is installed through Argo CD
-- Internal TLS certificates are issued by the `homelab-ca` ClusterIssuer
+- Let's Encrypt staging and production ClusterIssuers are `Ready`; all six current `lab.seandre.dev` k3s application certificates are `Ready`
 - Monitoring is installed through Argo CD with kube-prometheus-stack
 - Argo CD is exposed at `https://argocd.lab.seandre.dev`
 - The nginx test app is exposed at `https://nginx-test.lab.seandre.dev`
 - Grafana is exposed at `https://grafana.lab.seandre.dev`
 - Homepage is exposed at `https://home.lab.seandre.dev`
+- KOReader Sync is exposed at `https://kosync.lab.seandre.dev`
+- The VitePress documentation site is exposed at `https://docs.lab.seandre.dev`
+- `utility-01` is active at `192.168.40.24`; Git, Ansible, and `kubectl` are installed, while `oc`, `openshift-install`, and `oc-mirror` remain to be installed
+- Standalone `pve-02` is active at `192.168.40.25` and runs VM `200` (`bastion-01`)
+- `bastion-01` owns `.33`, `.29`, and `.31` and runs DNS forwarding, HAProxy, Nexus, and Glances; the OKD DNS records remain inactive
+- `pbs-01.lab.seandre.dev` runs on `pve-01` and holds a verified, protected stopped backup of `bastion-01`; the isolated Nexus artifact restore test passed
 - UniFi UDM Pro Intrusion Prevention was identified as the cause of intermittent SSH/TCP timeouts and adjusted
-- Next sequence: prove public DNS-01 on k3s, finish `utility-01`, build `pve-02` and `bastion-01`, then install connected compact OKD on the three Ryzen systems
+- Next sequence: repair and dry-run the Nexus Certbot deployment hook, install the missing OKD clients on `utility-01`, then prepare and install connected compact OKD on the three Ryzen systems
 
 ## Repo Map
 
@@ -85,7 +91,7 @@ App manifests should stay in `kubernetes/apps` unless they are truly cluster-spe
 
 ## Current Direction
 
-Follow the [numbered documentation order](docs/overview/documentation-order.md): [prove public DNS/TLS](docs/build/public-domain-tls.md), finish the [`utility-01` automation server](docs/build/utility-automation-server.md), build [standalone `pve-02` and `bastion-01`](docs/build/pve-02-and-bastion.md), then install [compact OKD](docs/build/compact-okd.md). The broader backlog lives in the [Learning Roadmap](docs/overview/learning-roadmap.md).
+Follow the [numbered documentation order](docs/overview/documentation-order.md). Public DNS/TLS and [standalone `pve-02` plus `bastion-01`](docs/build/pve-02-and-bastion.md) are operational, and the [PBS recovery gate](docs/operations/proxmox-backup-server.md) has passed. Finish the missing [`utility-01` OKD clients](docs/build/utility-automation-server.md), then install [compact OKD](docs/build/compact-okd.md). The broader backlog lives in the [Learning Roadmap](docs/overview/learning-roadmap.md).
 
 GitHub remains the recovery-safe source of truth during bootstrap. Self-hosted Git is deferred so cluster recovery never depends on an in-cluster Git service.
 

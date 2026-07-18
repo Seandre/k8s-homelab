@@ -1,6 +1,6 @@
 # Build 04: Connected Compact OKD on the Ryzen Nodes
 
-> Status: planned. `pve-02`, `bastion-01`, and the OKD nodes do not exist yet. Complete the public-DNS proof, `utility-01`, `pve-02`, and `bastion-01` first.
+> Status: planned. `pve-02`, `bastion-01`, and `pbs-01` are operational, and the Nexus recovery test has passed. The three Ryzen systems are on hand, but their storage preparation and OKD installation have not started. Keep the OKD DNS records inactive until Gate 3.
 
 This project installs a connected, Agent-based compact OKD cluster on the three HP EliteDesk 805 G8 systems. Each system is a schedulable control-plane node; there are no separate compute nodes. The existing VM-based k3s cluster remains intact as the rollback and management environment.
 
@@ -33,6 +33,8 @@ Do not generate installation media until all of these are true:
 - standalone `pve-02` at `.25` is healthy.
 - `bastion-01` at `.33` runs `dnsmasq`, HAProxy, and Nexus and owns secondary addresses `.29` and `.31`.
 - the OKD forward and reverse records resolve correctly from `utility-01`, a workstation, and each node network.
+
+Current state as of 2026-07-18: `pve-02` and `bastion-01` satisfy their live service checks, and `pbs-01` has a verified, protected, artifact-tested recovery point. `utility-01` is operational but still needs `oc`, `openshift-install`, and `oc-mirror`. The OKD records are intentionally absent and therefore the final DNS bullet remains a Gate 3 action.
 
 Keep installer and client versions aligned with the selected OKD release. Record their checksums and versions in the build log; do not silently use `latest`.
 
@@ -285,7 +287,7 @@ Never configure a custom certificate for `api-int.okd.lab.seandre.dev`. That int
 
 ## Nexus and Mirroring
 
-Use Nexus first as an artifact repository. Document and test backup, restore, retention, and pruning before it becomes a dependency. Only after the connected cluster is healthy should `oc-mirror` add a narrowly scoped release and Operator mirror. Keep the first installation connected so DNS, load balancing, installation, and mirroring failures are not combined.
+Nexus is already in use as an artifact repository, and its PBS backup and isolated artifact restore test passed on 2026-07-18. Preserve the daily H2-before-PBS schedule and the protected recovery point. Only after the connected cluster is healthy should `oc-mirror` add a narrowly scoped release and Operator mirror. Keep the first installation connected so DNS, load balancing, installation, and mirroring failures are not combined.
 
 ## Memory Upgrade
 
@@ -301,7 +303,7 @@ Upgrade one node from 16 GB to 32 GB at a time:
 
 - Shut down one node and confirm etcd quorum, API access through `.29`, and application ingress through `.31` remain available.
 - Confirm HAProxy removes and later restores the backend.
-- Restore Nexus from backup and prove retention/pruning.
+- Repeat the isolated Nexus restore after a major Nexus or PBS change and review retention/pruning results.
 - Test the narrow `oc-mirror` workflow before relying on mirrored content.
 - Preserve installer artifacts and kubeconfigs according to the recovery policy.
 

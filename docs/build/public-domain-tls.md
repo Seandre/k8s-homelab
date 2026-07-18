@@ -1,6 +1,6 @@
 # Build 01: Publicly Trusted TLS with `seandre.dev`
 
-> Status: planned. Cloudflare delegation is verified, no private homelab A/AAAA records are publicly published, and the k3s DNS-01 proof has not yet been performed. Bastion, Nexus, and OKD certificate steps are future work.
+> Status: implemented for the current k3s applications and the live Nexus endpoint. Both Let's Encrypt ClusterIssuers and all six current k3s certificates were `Ready` on 2026-07-18. Nexus serves a trusted Let's Encrypt certificate through HAProxy. OKD certificates remain planned, and the live Nexus Certbot deploy hook still needs correction and a successful renewal dry-run.
 
 This tutorial replaces browser and `curl` trust warnings for homelab web applications with certificates from Let's Encrypt. The applications remain reachable only from the trusted LAN or VPN; buying a public domain does not require publishing the ingress controller to the internet.
 
@@ -23,7 +23,7 @@ This tutorial uses Cloudflare DNS because cert-manager supports its API directly
 | Homepage | `home.lab.home.arpa` | `home.lab.seandre.dev` |
 | nginx test | `nginx-test.lab.home.arpa` | `nginx-test.lab.seandre.dev` |
 | KOReader Sync | `kosync.lab.home.arpa` | `kosync.lab.seandre.dev` |
-| Homelab docs | Not deployed | `docs.lab.seandre.dev` |
+| Homelab docs | New service | `docs.lab.seandre.dev` |
 
 The existing `lab.home.arpa` records can remain during migration. Public CAs cannot issue certificates for `.home.arpa`, so clients must use the new names to receive publicly trusted TLS.
 
@@ -204,7 +204,7 @@ If the challenge stalls, check the token permissions, the `seandre.dev` zone res
 
 ## Step 5: Prove Production with KOReader Sync
 
-Keep the existing `kubernetes/apps/kosync/ingress.yaml` unchanged during the migration window. It continues to serve `kosync.lab.home.arpa` with the private-CA certificate, which preserves the current KOReader endpoint and provides a rollback path.
+During the migration window, keep `kubernetes/apps/kosync/ingress.yaml` as a rollback path while adding the public-name ingress. The current client endpoint is `kosync.lab.seandre.dev`; the former `.home.arpa` DNS name no longer resolves, even though the legacy ingress manifest remains in Git.
 
 Create `kubernetes/apps/kosync/ingress-public.yaml` as a separate Ingress for the new public-domain endpoint:
 
@@ -383,9 +383,11 @@ For disaster recovery, preserve these facts outside the cluster:
 
 The ACME account private-key Secrets are useful but replaceable. The DNS API token and control of the domain are what allow a rebuilt cluster to obtain fresh certificates.
 
-## Bastion and Nexus TLS (Planned)
+## Bastion and Nexus TLS (Active; Renewal Validation Pending)
 
-Build `bastion-01` only after `pve-02`. Nexus resolves privately as `nexus.lab.seandre.dev` at `192.168.40.33`; do not publish a public A/AAAA record. Terminate Nexus HTTPS on `.33:443`, separate from HAProxy's OKD ingress listener on `.31:443`.
+The implemented endpoint resolves privately as `nexus.lab.seandre.dev`, via `bastion-01.lab.seandre.dev`, at `192.168.40.33`; no public A/AAAA record is published. HAProxy terminates Nexus HTTPS on `.33:443`, separate from the OKD ingress listener on `.31:443`, and Nexus itself listens only on loopback port `8081`.
+
+The live certificate is a trusted Let's Encrypt ECDSA certificate for `nexus.lab.seandre.dev`, and `certbot.timer` is enabled. The 2026-07-18 audit found that `/etc/letsencrypt/renewal-hooks/deploy/haproxy-nexus` omits the `> "$TMP"` output redirection shown in Build 03. Repair the live hook to match the documented version, run it directly, then run `certbot renew --dry-run`. Do not treat automatic Nexus certificate renewal as accepted until both commands succeed without exposing key material in output or logs.
 
 Issue the Nexus certificate with DNS-01 from a controlled ACME client or cert-manager workflow and deploy its full chain and private key with restrictive permissions. Automate renewal and service reload, monitor expiry, and test restoration. A wildcard certificate is not required for this single endpoint.
 

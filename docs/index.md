@@ -17,4 +17,7 @@ Read the [complete documentation order](overview/documentation-order.md) for opt
 - The existing three-node k3s cluster is the active application platform.
 - Argo CD reconciles Kubernetes state from this repository.
 - Traefik uses the private ingress VIP `192.168.40.30`.
-- Compact OKD, `pve-02`, and `bastion-01` remain planned builds.
+- `pve-02` is an active standalone Proxmox VE host, and `bastion-01` runs DNS forwarding, HAProxy, Nexus, and Glances on it.
+- `pbs-01` runs on the separate physical host `pve-01`; the stopped `bastion-01` backup, automatic verification, and isolated Nexus artifact restore test have passed.
+- The six current k3s applications use private `lab.seandre.dev` names with ready publicly trusted certificates.
+- Compact OKD remains planned. Its three Ryzen systems are on hand, but the storage preparation and installation have not started.

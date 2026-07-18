@@ -2,7 +2,7 @@
 
 **Status:** Implemented — the PBS build, application-consistent backup, automatic verification, protected recovery point, and network-isolated Nexus artifact restore test passed.
 
-This runbook builds `pbs-01` as a Proxmox Backup Server VM on `pve-01`. Its first responsibility is to hold recoverable backups of `bastion-01`, which runs on the separate physical host `pve-02`. The first successful backup is not the completion gate: restore that backup into an isolated VM and download a known Nexus artifact before allowing Nexus to become an OKD dependency.
+This runbook documents the implemented `pbs-01` Proxmox Backup Server VM on `pve-01`. Its first responsibility is to hold recoverable backups of `bastion-01`, which runs on the separate physical host `pve-02`. The first successful backup is not the completion gate: restore that backup into an isolated VM and download a known Nexus artifact before allowing Nexus to become an OKD dependency.
 
 ## Implementation Record: 2026-07-18
 
@@ -18,7 +18,7 @@ The PBS side of this runbook is implemented:
 - PBS, Postfix, its self-signed certificate CN/SANs, and both Proxmox storage definitions use canonical name `pbs-01.lab.seandre.dev`. The pinned certificate SHA-256 fingerprint is `72:ed:05:58:cd:4b:cd:b7:0e:27:50:fb:1b:62:30:79:ba:d3:41:ae:56:fd:79:70:f2:32:4c:0b:b3:5e:8f:20`.
 - `pve-02` has active backup storage `pbs-pve02`; `pve-01` has active restore-only storage `pbs-pve02-restore`, restricted to its actual Proxmox node name `pve01`.
 - A stopped baseline backup of `bastion-01` completed at `2026-07-18T06:37:37Z`; PBS recorded both the backup and automatic verification tasks as `OK`. Its first network-isolated restore proved that Nexus `3.94.0-12` starts and answers its loopback status endpoint.
-- Nexus task `Backup H2 database before PBS` (`h2.backup.task`) is enabled daily at `02:30` PDT, before the VM backup. Its post-artifact run completed `OK` at `2026-07-18T07:10:48Z` and produced `nexus-2026-07-18-07-10-48.zip`, containing `nexus.mv.db`.
+- Nexus task `Backup H2 database before PBS` (`h2.backup.task`) is enabled daily at `09:30` UTC (`02:30` PDT / `01:30` PST), before the VM backup. Its post-artifact run completed `OK` at `2026-07-18T07:10:48Z` and produced `nexus-2026-07-18-07-10-48.zip`, containing `nexus.mv.db`.
 - The harmless recovery artifact is in repository `maven-releases` at `dev/seandre/homelab/nexus-recovery-probe/2026.07.18/nexus-recovery-probe-2026.07.18.pom`. An authenticated download from production was 614 bytes with SHA-256 `7143e3f449c9dfb5d7b11041affa62dc54daae1746938fa4a9c25ee43d7aed78`.
 - The final stopped acceptance backup completed at `2026-07-18T07:13:01Z`. PBS recorded the backup and automatic verification tasks as `OK`. Because the restricted token intentionally cannot modify snapshots, the snapshot was protected afterward with PBS administrative credentials instead of expanding the token role.
 - The acceptance snapshot restored to temporary VM `202` on `pve-01`. Its NIC was removed before first boot, start-at-boot was disabled, and memory was limited to 8 GiB. Nexus became ready on loopback, the H2 ZIP was present, and the restored artifact downloaded as 614 bytes with the exact production SHA-256. VM `202` and `vm-202-disk-0` were deleted after the test, and production Nexus remained healthy.
@@ -270,7 +270,7 @@ Never start the restored VM with its production NIC connected merely to make the
 
 ## Phase 8: Schedule and Operate the Backup
 
-After the recovery drill succeeds, create a scheduled `bastion-01` backup job on `pve-02`. Job `bastion-01-daily-pbs` is enabled daily at `03:00` in `Stop` mode. Nexus task `Backup H2 database before PBS` is enabled daily at `02:30` PDT with its notification condition set to failure. Revisit the downtime choice only after a vendor-supported online database-and-blob procedure is documented and tested; a crash-consistent snapshot alone does not replace application consistency.
+After the recovery drill succeeds, create a scheduled `bastion-01` backup job on `pve-02`. Job `bastion-01-daily-pbs` is enabled daily at `03:00` in `Stop` mode. Nexus task `Backup H2 database before PBS` is enabled daily at `09:30` UTC (`02:30` PDT / `01:30` PST) with its notification condition set to failure, so it remains before the Proxmox job across Pacific daylight-saving changes. Revisit the downtime choice only after a vendor-supported online database-and-blob procedure is documented and tested; a crash-consistent snapshot alone does not replace application consistency.
 
 At least monthly:
 
