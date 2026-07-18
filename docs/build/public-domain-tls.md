@@ -1,6 +1,6 @@
 # Build 01: Publicly Trusted TLS with `seandre.dev`
 
-> Status: implemented for the current k3s applications and the live Nexus endpoint. Both Let's Encrypt ClusterIssuers and all six current k3s certificates were `Ready` on 2026-07-18. Nexus serves a trusted Let's Encrypt certificate through HAProxy. OKD certificates remain planned, and the live Nexus Certbot deploy hook still needs correction and a successful renewal dry-run.
+> Status: implemented for the current k3s applications and the live Nexus endpoint. Both Let's Encrypt ClusterIssuers and all six current k3s certificates were `Ready` on 2026-07-18. Nexus serves a trusted Let's Encrypt certificate through HAProxy, and its Certbot deploy hook passed a renewal dry-run. OKD certificates remain planned.
 
 This tutorial replaces browser and `curl` trust warnings for homelab web applications with certificates from Let's Encrypt. The applications remain reachable only from the trusted LAN or VPN; buying a public domain does not require publishing the ingress controller to the internet.
 
@@ -387,7 +387,9 @@ The ACME account private-key Secrets are useful but replaceable. The DNS API tok
 
 The implemented endpoint resolves privately as `nexus.lab.seandre.dev`, via `bastion-01.lab.seandre.dev`, at `192.168.40.33`; no public A/AAAA record is published. HAProxy terminates Nexus HTTPS on `.33:443`, separate from the OKD ingress listener on `.31:443`, and Nexus itself listens only on loopback port `8081`.
 
-The live certificate is a trusted Let's Encrypt ECDSA certificate for `nexus.lab.seandre.dev`, and `certbot.timer` is enabled. The 2026-07-18 audit found that `/etc/letsencrypt/renewal-hooks/deploy/haproxy-nexus` omits the `> "$TMP"` output redirection shown in Build 03. Repair the live hook to match the documented version, run it directly, then run `certbot renew --cert-name nexus.lab.seandre.dev --dry-run --run-deploy-hooks`. Certbot does not execute deploy hooks during a dry-run unless `--run-deploy-hooks` is present. Do not treat automatic Nexus certificate renewal as accepted until both commands succeed without exposing key material in output or logs.
+The live certificate is a trusted Let's Encrypt ECDSA certificate for `nexus.lab.seandre.dev`, and `certbot.timer` is enabled. On 2026-07-18, the installed deploy hook was corrected to include the `> "$TMP"` redirection shown in Build 03. The hook ran directly, a clean `certbot renew --cert-name nexus.lab.seandre.dev --dry-run --run-deploy-hooks` succeeded, and HAProxy served the same new certificate serial held by Certbot. Certbot does not execute deploy hooks during a dry-run unless `--run-deploy-hooks` is present.
+
+During the first validation attempt, Certbot also executed a dated copy of the old malformed hook because that backup was still executable inside the deploy-hook directory. It wrote the superseded private key to the local Certbot log. The backup was moved to `/root` with mode `0600`, the production certificate was force-renewed with a new key, the superseded certificate was revoked with reason `keycompromise`, the logged PEM block was redacted, and the Certbot log was set to mode `0600`. Only `haproxy-nexus` is now executable in the deploy-hook directory. Keep backup copies outside `/etc/letsencrypt/renewal-hooks/{pre,deploy,post}`; Certbot treats every executable file there as a hook.
 
 Issue the Nexus certificate with DNS-01 from a controlled ACME client or cert-manager workflow and deploy its full chain and private key with restrictive permissions. Automate renewal and service reload, monitor expiry, and test restoration. A wildcard certificate is not required for this single endpoint.
 

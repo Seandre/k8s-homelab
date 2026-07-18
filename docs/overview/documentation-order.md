@@ -12,7 +12,7 @@ Use the explicit VitePress sidebar and the numbered entries below as the navigat
 
 1. [Build 01: Publicly Trusted TLS](../build/public-domain-tls.md) proves Cloudflare DNS-01 on the existing k3s cluster and migrates its private ingress names. **Complete for the current k3s endpoints; OKD certificates remain future work.**
 2. [Build 02: Utility Automation Server](../build/utility-automation-server.md) validates `utility-01`, including Git, Kubernetes clients, Ansible inventory, SSH, and safe connectivity tests. **Operational, but the OKD clients still need installation.**
-3. [Build 03: `pve-02` and `bastion-01`](../build/pve-02-and-bastion.md) creates the standalone Proxmox host and the DNS, HAProxy, and Nexus dependency. **Operational and protected by tested PBS recovery; Nexus certificate-renewal validation remains open.**
+3. [Build 03: `pve-02` and `bastion-01`](../build/pve-02-and-bastion.md) creates the standalone Proxmox host and the DNS, HAProxy, and Nexus dependency. **Operational, protected by tested PBS recovery, and accepted through a successful Nexus certificate-renewal dry-run.**
 4. [Build 04: Compact OKD](../build/compact-okd.md) activates private OKD DNS and installs the three-node connected Agent-based cluster. **Planned.**
 
 Do not activate the OKD private records before `bastion-01` is operational. Do not configure Nexus mirroring or custom OKD certificates until every ClusterOperator is stable.

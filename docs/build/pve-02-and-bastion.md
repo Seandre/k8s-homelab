@@ -1,6 +1,6 @@
 # Build 03: `pve-02` and `bastion-01`
 
-> Status: operational as of 2026-07-18. `pve-02` and VM `200` (`bastion-01`) are active; DNS forwarding, HAProxy, Nexus, Glances, trusted Nexus HTTPS, and the PBS recovery test have passed. The remaining live issue is the Nexus Certbot deployment hook, which must be corrected and pass a renewal dry-run.
+> Status: operational as of 2026-07-18. `pve-02` and VM `200` (`bastion-01`) are active; DNS forwarding, HAProxy, Nexus, Glances, trusted Nexus HTTPS, the Certbot deployment hook and renewal dry-run, and the PBS recovery test have passed.
 
 This project integrates the HP EliteDesk 800 G6 Mini as standalone `pve-02`. Its first required workload is `bastion-01`, which provides DNS, HAProxy, and Nexus for [Build 04: Compact OKD](compact-okd.md). The older `k8s-worker-03` exercise below is optional and must not consume the bastion's resources or addresses.
 
@@ -1061,7 +1061,7 @@ The required Step 6 checkpoint is complete when:
 | ☑ | Homepage shows live CPU, RAM, swap, and uptime for both `pve-02` and `bastion-01`. |
 | ☑ | Nexus database, blobs, configuration, and node identity have an external backup and a successful restore test. |
 | ☑ | No OKD private records or UniFi Forward Domain have been activated yet. |
-| ☐ | The installed Certbot deploy hook matches the documented safe redirection and `certbot renew --cert-name nexus.lab.seandre.dev --dry-run --run-deploy-hooks` succeeds. |
+| ☑ | The installed Certbot deploy hook matches the documented safe redirection and `certbot renew --cert-name nexus.lab.seandre.dev --dry-run --run-deploy-hooks` succeeds. |
 
 ## Optional Exercise: Create `k8s-worker-03`
 
