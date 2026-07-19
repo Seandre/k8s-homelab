@@ -15,6 +15,8 @@ Do not boot a Ryzen node from the generated Agent ISO until its MAC address, hos
 | Item | `okd-cp-01` | `okd-cp-02` | `okd-cp-03` |
 |---|---|---|---|
 | Address | `192.168.40.26` | `192.168.40.27` | `192.168.40.28` |
+| UniFi access port | UDM Pro port 2 | UDM Pro port 4 | UDM Pro port 6 |
+| Onboard NIC MAC | `c0:18:03:83:80:bb` | `c0:18:03:83:80:ab` | `c0:18:03:83:80:bc` |
 | FQDN | `okd-cp-01.okd.lab.seandre.dev` | `okd-cp-02.okd.lab.seandre.dev` | `okd-cp-03.okd.lab.seandre.dev` |
 | CPU | Ryzen 5 PRO 5650GE, 6C/12T | Ryzen 5 PRO 5650GE, 6C/12T | Ryzen 5 PRO 5650GE, 6C/12T |
 | Initial RAM | 16 GB | 16 GB | 16 GB |
@@ -30,6 +32,15 @@ Do not boot a Ryzen node from the generated Agent ISO until its MAC address, hos
 The install configuration uses `baseDomain: lab.seandre.dev`, `metadata.name: okd`, three control-plane replicas, and zero compute replicas. The node network is `192.168.40.0/24`, the gateway is `192.168.40.1`, and the nodes use `192.168.40.33` for DNS.
 
 This walkthrough pins `4.22.0-okd-scos.7`, the stable OKD/SCOS release selected on 2026-07-18. Do not silently replace it with `latest`. If you deliberately select a later release, update every download, checksum, client, installer, and reference to that same release before generating media.
+
+::: tip Connected-node checkpoint (2026-07-19)
+The temporary Ubuntu path is now connected and validated. `okd-cp-01`,
+`okd-cp-02`, and `okd-cp-03` are on UDM Pro ports 2, 4, and 6 respectively,
+using untagged access on Servers VLAN 40. UniFi reservations are set to
+`.26`, `.27`, and `.28`. Ubuntu uses `/etc/netplan/01-dhcp.yaml` with
+`eno1`, DHCPv4, DHCPv6 disabled, and `optional: true`; this avoids an
+indefinite `systemd-networkd-wait-online` boot wait after the offline install.
+:::
 
 ## Step 1: Confirm the Starting Gate
 
@@ -216,9 +227,9 @@ Fill in this worksheet before creating `agent-config.yaml`:
 
 | Node | Onboard interface | Onboard MAC | Only non-rotating disk at least 900 GB? |
 |---|---|---|---|
-| `okd-cp-01` | `<record>` | `<record>` | yes / no |
-| `okd-cp-02` | `<record>` | `<record>` | yes / no |
-| `okd-cp-03` | `<record>` | `<record>` | yes / no |
+| `okd-cp-01` | `eno1` | `c0:18:03:83:80:bb` | yes / no |
+| `okd-cp-02` | `eno1` | `c0:18:03:83:80:ab` | yes / no |
+| `okd-cp-03` | `eno1` | `c0:18:03:83:80:bc` | yes / no |
 
 Do not continue with an unknown MAC, multiple matching disks, failing SMART data, inconsistent firmware, or an unexplained performance outlier. etcd needs low-latency synchronous storage; investigate rather than normalizing a slow node.
 
