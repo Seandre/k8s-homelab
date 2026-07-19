@@ -230,11 +230,19 @@ Complete [Temporary Ubuntu and Top500 HPL Benchmark](../optional/hpl-benchmark.m
 
 Fill in this worksheet before creating `agent-config.yaml`:
 
-| Node | Onboard interface | Onboard MAC | Only non-rotating disk at least 900 GB? |
-|---|---|---|---|
-| `okd-cp-01` | `eno1` | `c0:18:03:83:80:bb` | yes / no |
-| `okd-cp-02` | `eno1` | `c0:18:03:83:80:ab` | yes / no |
-| `okd-cp-03` | `eno1` | `c0:18:03:83:80:bc` | yes / no |
+| Node | Onboard interface | Onboard MAC | Only non-rotating disk at least 900 GB? | HPL/storage benchmark recorded? |
+|---|---|---|---|---|
+| `okd-cp-01` | `eno1` | `c0:18:03:83:80:bb` | yes / no | yes |
+| `okd-cp-02` | `eno1` | `c0:18:03:83:80:ab` | yes / no | yes |
+| `okd-cp-03` | `eno1` | `c0:18:03:83:80:bc` | yes / no | yes |
+
+The completed Patriot P400L 1 TB SMART and synchronous-write checks passed on
+all three nodes. The representative results were approximately **376 IOPS**
+and **3.49 ms p99 `fdatasync` latency**, exceeding the 300-IOPS minimum and
+remaining below the 10-ms p99 acceptance threshold. SMART reported `PASSED`,
+40°C, 100% available spare, zero media/data-integrity errors, and zero error
+log entries on the recorded drive. Preserve each node's complete SMART and
+`fio` output in the private build log before proceeding.
 
 Do not continue with an unknown MAC, multiple matching disks, failing SMART data, inconsistent firmware, or an unexplained performance outlier. etcd needs low-latency synchronous storage; investigate rather than normalizing a slow node.
 
