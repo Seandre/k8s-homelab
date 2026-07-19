@@ -46,6 +46,8 @@ The three `okd-cp-*` hosts are physical, schedulable OKD control-plane nodes rat
 
 ## Network
 
+The [Network Topology and UniFi Policy](network-topology.md) documents the complete logical diagram, VLAN and firewall-zone matrix, UDM port assignments, remote access, and hardening backlog.
+
 | Item | Value |
 |---|---|
 | UniFi network | `Servers` |
@@ -59,7 +61,7 @@ The three `okd-cp-*` hosts are physical, schedulable OKD control-plane nodes rat
 | Bastion management | `192.168.40.33` |
 | PBS management | `pbs-01.lab.seandre.dev` (`192.168.40.34`); active and reserved |
 
-The switch port/native network carries VLAN `40`, so Proxmox VM NIC VLAN tags remain blank. The workstation LAN is `192.168.10.0/24`; routing and security policy between it and the server VLAN are handled by UniFi.
+The switch port/native network carries VLAN `40`, so Proxmox VM NIC VLAN tags remain blank. The primary workstation LAN is Main/Trusted VLAN `20` at `192.168.20.0/24`; Default VLAN `1` at `192.168.10.0/24` is retained as a wired recovery network. Routing and security policy between those networks and the server VLAN are handled by UniFi.
 
 ## Active Internal DNS
 

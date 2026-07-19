@@ -35,7 +35,7 @@ Do not continue if SSH, DNS, or the utility VM itself is unstable.
 The core bastion firewall does not open RDP. Add TCP `3389` only for the trusted client LAN and server VLAN:
 
 ```bash
-sudo ufw allow from 192.168.10.0/24 to any port 3389 proto tcp
+sudo ufw allow from 192.168.20.0/24 to any port 3389 proto tcp
 sudo ufw allow from 192.168.40.0/24 to any port 3389 proto tcp
 sudo ufw status verbose
 ```
@@ -127,7 +127,7 @@ Stop xrdp and remove its firewall rules:
 
 ```bash
 sudo systemctl disable --now xrdp
-sudo ufw delete allow from 192.168.10.0/24 to any port 3389 proto tcp
+sudo ufw delete allow from 192.168.20.0/24 to any port 3389 proto tcp
 sudo ufw delete allow from 192.168.40.0/24 to any port 3389 proto tcp
 sudo ufw status verbose
 ```

@@ -647,7 +647,7 @@ frontend nexus_https
     mode http
     option httplog
     option forwardfor
-    acl trusted src 192.168.2.0/24 192.168.10.0/24 192.168.40.0/24
+    acl trusted src 192.168.2.0/24 192.168.20.0/24 192.168.40.0/24
     http-request deny unless trusted
     http-request set-header X-Forwarded-Proto https
     http-request set-header X-Forwarded-Port 443
@@ -816,7 +816,7 @@ Allow SSH from the documented trusted networks:
 
 ```bash
 sudo ufw allow from 192.168.2.0/24 to 192.168.40.33 port 22 proto tcp
-sudo ufw allow from 192.168.10.0/24 to 192.168.40.33 port 22 proto tcp
+sudo ufw allow from 192.168.20.0/24 to 192.168.40.33 port 22 proto tcp
 sudo ufw allow from 192.168.40.0/24 to 192.168.40.33 port 22 proto tcp
 ```
 
@@ -824,7 +824,7 @@ Allow DNS from those networks:
 
 ```bash
 sudo ufw allow from 192.168.2.0/24 to 192.168.40.33 port 53
-sudo ufw allow from 192.168.10.0/24 to 192.168.40.33 port 53
+sudo ufw allow from 192.168.20.0/24 to 192.168.40.33 port 53
 sudo ufw allow from 192.168.40.0/24 to 192.168.40.33 port 53
 ```
 
@@ -832,7 +832,7 @@ Allow Nexus HTTPS:
 
 ```bash
 sudo ufw allow from 192.168.2.0/24 to 192.168.40.33 port 443 proto tcp
-sudo ufw allow from 192.168.10.0/24 to 192.168.40.33 port 443 proto tcp
+sudo ufw allow from 192.168.20.0/24 to 192.168.40.33 port 443 proto tcp
 sudo ufw allow from 192.168.40.0/24 to 192.168.40.33 port 443 proto tcp
 ```
 
@@ -840,7 +840,7 @@ Allow the OKD API and restrict machine-config traffic to the server VLAN:
 
 ```bash
 sudo ufw allow from 192.168.2.0/24 to 192.168.40.29 port 6443 proto tcp
-sudo ufw allow from 192.168.10.0/24 to 192.168.40.29 port 6443 proto tcp
+sudo ufw allow from 192.168.20.0/24 to 192.168.40.29 port 6443 proto tcp
 sudo ufw allow from 192.168.40.0/24 to 192.168.40.29 port 6443 proto tcp
 sudo ufw allow from 192.168.40.0/24 to 192.168.40.29 port 22623 proto tcp
 ```
@@ -849,11 +849,11 @@ Allow OKD application ingress from the trusted networks:
 
 ```bash
 sudo ufw allow from 192.168.2.0/24 to 192.168.40.31 port 80 proto tcp
-sudo ufw allow from 192.168.10.0/24 to 192.168.40.31 port 80 proto tcp
+sudo ufw allow from 192.168.20.0/24 to 192.168.40.31 port 80 proto tcp
 sudo ufw allow from 192.168.40.0/24 to 192.168.40.31 port 80 proto tcp
 
 sudo ufw allow from 192.168.2.0/24 to 192.168.40.31 port 443 proto tcp
-sudo ufw allow from 192.168.10.0/24 to 192.168.40.31 port 443 proto tcp
+sudo ufw allow from 192.168.20.0/24 to 192.168.40.31 port 443 proto tcp
 sudo ufw allow from 192.168.40.0/24 to 192.168.40.31 port 443 proto tcp
 ```
 

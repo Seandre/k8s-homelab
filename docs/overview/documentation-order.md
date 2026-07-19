@@ -5,8 +5,9 @@ Use the explicit VitePress sidebar and the numbered entries below as the navigat
 ## Start Here
 
 1. [Infrastructure Reference](infrastructure-reference.md) defines the canonical hardware, addresses, storage, and DNS plan.
-2. [Learning Roadmap](learning-roadmap.md) tracks the broader project backlog.
-3. [Architecture Decisions](architecture-decisions.md) records durable design choices and rationale.
+2. [Network Topology and UniFi Policy](network-topology.md) records the live VLANs, firewall zones, physical uplinks, remote access, and hardening backlog.
+3. [Learning Roadmap](learning-roadmap.md) tracks the broader project backlog.
+4. [Architecture Decisions](architecture-decisions.md) records durable design choices and rationale.
 
 ## Required Build Sequence
 

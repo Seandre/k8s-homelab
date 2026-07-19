@@ -43,6 +43,7 @@ export default defineConfig({
         items: [
           {text: 'Documentation Order', link: '/overview/documentation-order'},
           {text: 'Infrastructure Reference', link: '/overview/infrastructure-reference'},
+          {text: 'Network Topology', link: '/overview/network-topology'},
           {text: 'Learning Roadmap', link: '/overview/learning-roadmap'},
           {text: 'Architecture Decisions', link: '/overview/architecture-decisions'},
         ],

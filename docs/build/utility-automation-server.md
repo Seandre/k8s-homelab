@@ -139,7 +139,7 @@ tmux attach -t admin
 
 ## Step 5: Limit Access to the Homelab Network
 
-The utility VM is internal infrastructure. The local firewall should allow SSH and Mosh only from trusted internal networks. This example allows SSH from the Teleport network `192.168.2.0/24`, the client LAN `192.168.10.0/24`, and the server VLAN `192.168.40.0/24`. Mosh is limited to the client LAN and server VLAN. If another trusted VPN subnet needs access, add it explicitly and open only the required protocol and port.
+The utility VM is internal infrastructure. The local firewall should allow SSH and Mosh only from trusted internal networks. This example allows SSH from the Teleport network `192.168.2.0/24`, the Main/Trusted client LAN `192.168.20.0/24`, and the server VLAN `192.168.40.0/24`. Mosh is limited to the client LAN and server VLAN. If another trusted VPN subnet needs access, add it explicitly and open only the required protocol and port.
 
 Before enabling UFW, confirm that your current SSH client is in one of those networks. If it is not, add an equivalent allow rule for its trusted source subnet first; otherwise, enabling the firewall would disconnect you.
 
@@ -148,8 +148,8 @@ sudo apt install -y ufw
 sudo ufw default deny incoming
 sudo ufw default allow outgoing
 sudo ufw allow from 192.168.2.0/24 to any port 22 proto tcp
-sudo ufw allow from 192.168.10.0/24 to any port 22 proto tcp
-sudo ufw allow from 192.168.10.0/24 to any port 60000:61000 proto udp
+sudo ufw allow from 192.168.20.0/24 to any port 22 proto tcp
+sudo ufw allow from 192.168.20.0/24 to any port 60000:61000 proto udp
 sudo ufw allow from 192.168.40.0/24 to any port 22 proto tcp
 sudo ufw allow from 192.168.40.0/24 to any port 60000:61000 proto udp
 sudo ufw --force enable
@@ -312,7 +312,7 @@ If host automation uses a different private key, update the local Ansible config
 If Mosh is not needed, stop using it and remove its firewall allowance:
 
 ```bash
-sudo ufw delete allow from 192.168.10.0/24 to any port 60000:61000 proto udp
+sudo ufw delete allow from 192.168.20.0/24 to any port 60000:61000 proto udp
 sudo ufw delete allow from 192.168.40.0/24 to any port 60000:61000 proto udp
 sudo ufw status verbose
 ```

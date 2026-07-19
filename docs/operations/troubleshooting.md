@@ -104,7 +104,7 @@ Confirm that every VM has a unique hostname, `/etc/machine-id`, SSH host-key fin
 
 Evidence rules:
 
-- The Mac is routed from `192.168.10.0/24` to `192.168.40.0/24`, so its ARP table normally shows its gateway rather than VM MAC addresses.
+- The Mac is routed from Main/Trusted `192.168.20.0/24` to Servers `192.168.40.0/24`, so its ARP table normally shows its gateway rather than VM MAC addresses.
 - A changing VM MAC in Proxmox or UniFi suggests an IP conflict or client-table problem.
 - If Proxmox reaches a VM while the Mac cannot, focus on UniFi routing, firewall, and client tracking.
 - If both Proxmox and the Mac lose a VM, focus on the guest OS, VM NIC, bridge, or VM health.

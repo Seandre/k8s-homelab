@@ -9,7 +9,7 @@ This site is the readable view of the Markdown documentation stored in the homel
 3. [`pve-02` and `bastion-01`](build/pve-02-and-bastion.md)
 4. [Connected compact OKD](build/compact-okd.md)
 
-Read the [complete documentation order](overview/documentation-order.md) for optional projects and operations references. The [infrastructure reference](overview/infrastructure-reference.md) is the canonical source for hardware, addresses, storage, and DNS.
+Read the [complete documentation order](overview/documentation-order.md) for optional projects and operations references. The [infrastructure reference](overview/infrastructure-reference.md) is the canonical source for hardware, addresses, storage, and DNS; the [network topology](overview/network-topology.md) records the live UniFi VLANs, zones, uplinks, and policy boundaries.
 
 ## Current Platform
 
