@@ -168,7 +168,7 @@ If copying or recreating the template is not convenient, create `bastion-01` man
 | OKD application HTTPS | `192.168.40.31:443` | HAProxy |
 
 ::: warning Hold the OKD DNS gate
-Do not create the `okd.lab.seandre.dev` records or the UniFi Forward Domain during this step. First prove that `dnsmasq` forwards unmatched public queries, Nexus works through trusted HTTPS, and HAProxy owns the intended listeners. Activate the OKD records later in [Build 04: Compact OKD](compact-okd.md#gate-3-activate-private-dns).
+Do not create the `okd.lab.seandre.dev` records or the UniFi Forward Domain during this step. First prove that `dnsmasq` forwards unmatched public queries, Nexus works through trusted HTTPS, and HAProxy owns the intended listeners. Activate the OKD records later in [Build 04: Compact OKD](compact-okd.md#step-4-activate-the-private-okd-dns-records).
 :::
 
 ### Phase 1: Provision the VM
