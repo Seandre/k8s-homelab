@@ -244,6 +244,14 @@ remaining below the 10-ms p99 acceptance threshold. SMART reported `PASSED`,
 log entries on the recorded drive. Preserve each node's complete SMART and
 `fio` output in the private build log before proceeding.
 
+The recorded three-node HPL run also passed: **116.110 aggregate GFLOPS** in
+1,069.49 seconds with a `6 x 6`/36-rank MPI layout, `N=57,109`, `NB=256`, and
+24.30 GiB of matrix storage. The scaled residual was `1.35898457e-03`, below
+the `<16.0` acceptance threshold. This is a distributed FP64 result across
+the three Ryzen nodes, not a per-node score or a direct etcd/Kubernetes
+capacity metric; see the [benchmark record](../optional/hpl-benchmark.md#recorded-bare-metal-result)
+for provenance and the exact upstream revision.
+
 Do not continue with an unknown MAC, multiple matching disks, failing SMART data, inconsistent firmware, or an unexplained performance outlier. etcd needs low-latency synchronous storage; investigate rather than normalizing a slow node.
 
 ## Step 4: Activate the Private OKD DNS Records

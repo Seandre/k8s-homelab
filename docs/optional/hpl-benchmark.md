@@ -321,4 +321,22 @@ rg -n -A2 'Gflops|PASSED|FAILED' benchmark-results/*/*.log
 
 The scientific-notation value in the `Gflops` column is the headline result. Compare only logs with the same full upstream SHA. The totals describe the capability of different systems; they do not isolate virtualization overhead.
 
+### Recorded bare-metal result
+
+The first completed three-node Ryzen run passed all numerical checks:
+
+| Metric | Result |
+|---|---:|
+| Outcome | **PASS** |
+| Aggregate performance | **116.110 GFLOPS** |
+| Performance per MPI rank | 3.225 GFLOPS |
+| Solve time | 1,069.49 seconds (17m 49.49s) |
+| Matrix order / block size | `N=57,109` / `NB=256` |
+| Process grid / MPI ranks | `6 x 6` / 36 |
+| Approximate matrix storage | 24.30 GiB |
+| Scaled residual | `1.35898457e-03` (**PASSED**, threshold `<16.0`) |
+| HPL variant | `WR11C2R4` |
+
+This is the aggregate result for `okd-cp-01`, `okd-cp-02`, and `okd-cp-03`, using upstream `geerlingguy/top500-benchmark` revision `e71588f33fcf358910047de25720e3147d627be4`. It is a distributed dense-FP64 MPI result, not a per-node score or a direct Kubernetes/etcd capacity measure. The raw log and generated sidecar are retained locally under `benchmark-results/20260719T214959Z-e71588f33fcf/`; back them up before the temporary Ubuntu installations are replaced by OKD.
+
 Do not let OKD overwrite the Ryzen disks until the intended bare-metal log contains a passing residual and a valid GFLOPS result, and the logs have been backed up somewhere durable.
