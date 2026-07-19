@@ -136,11 +136,12 @@ The `openshift-install version` output must identify `4.22.0-okd-scos.7` and its
 Perform this step on one node at a time so chassis, NIC, and SSD identities cannot be crossed.
 
 1. Install the intended 1 TB SSD.
-2. Connect the onboard wired Ethernet port to the UniFi `Servers` network on VLAN `40`.
+2. Label the chassis with its intended `okd-cp-*` identity and keep Ethernet disconnected during the temporary Ubuntu installation.
 3. Connect a keyboard and monitor.
 4. Power on and press `F10` repeatedly to open HP Computer Setup.
 5. Record the chassis serial, firmware version, installed memory, onboard NIC MAC, SSD model, and SSD serial in the private asset inventory.
 6. Update all three systems to the same stable HP firmware before continuing.
+7. If benchmarking, install and onboard temporary Ubuntu exactly as described in [Optional 05: Top500 HPL Benchmark](../optional/hpl-benchmark.md#install-temporary-ubuntu-on-the-ryzen-nodes). The node remains offline during installation, then uses DHCP with a UniFi reservation for its future `.26`, `.27`, or `.28` address after it is connected to an access/native Servers VLAN `40` switch port.
 
 Apply a consistent firmware baseline:
 
@@ -156,7 +157,7 @@ Apply a consistent firmware baseline:
 | After power loss | Power on | Returns a cluster node to service after power restoration |
 | Boot order after install | Internal SSD before USB/network | Prevents an accidental reinstall |
 
-If temporary Ubuntu is already installed, collect the inventory with these commands. Otherwise use an Ubuntu live environment and do not install it merely for inventory:
+If temporary Ubuntu is installed for the benchmark, collect the inventory with these commands. Otherwise use an Ubuntu live environment and do not install it merely for inventory:
 
 ```bash
 hostnamectl
@@ -203,7 +204,7 @@ Replace `<INSTALL_DISK>` with the recorded SSD device, such as `/dev/nvme0n1` or
 
 The published minimum for a control-plane node is 4 CPUs, 16 GB RAM, 100 GB storage, and 300 IOPS. These nodes meet the installation minimum, but 16 GB leaves little capacity for applications. Plan the documented 32 GB upgrade after acceptance.
 
-If temporary Ubuntu is installed and you want a repeatable compute baseline, complete [Optional 05: Top500 HPL Benchmark](../optional/hpl-benchmark.md) now. Back up its results before continuing because OKD will erase the temporary installation.
+If temporary Ubuntu is installed, complete [Optional 05: Top500 HPL Benchmark](../optional/hpl-benchmark.md) now. Back up its results before continuing because OKD will erase the temporary installation. The Ubuntu DHCP reservations may remain for address continuity, but the final Agent configuration—not Ubuntu netplan—provides each node's static OKD address.
 
 Fill in this worksheet before creating `agent-config.yaml`:
 

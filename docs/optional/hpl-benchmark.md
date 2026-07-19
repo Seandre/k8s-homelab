@@ -4,6 +4,207 @@ This optional benchmark compares the three running k3s VMs with the three Ryzen 
 
 The wrapper updates upstream only when explicitly requested. It records the exact `master` commit and uses that same revision for both profiles, so a later upstream change cannot silently alter one side of the comparison. Skipping this benchmark does not block the OKD build.
 
+## Install Temporary Ubuntu on the Ryzen Nodes
+
+Install the nodes one at a time, but benchmark all three together. Use the same verified Ubuntu Server 26.04 amd64 ISO, installer choices, firmware baseline, and package-update pass on every system. These installations are disposable: the OKD Agent installer will overwrite them later.
+
+The initial Ubuntu installation may remain completely offline. Keep Ethernet unplugged until the installer finishes, the system shuts down, and the installer USB has been removed. The onboard NIC should still be configured for DHCP so it can receive its reserved Servers-VLAN address on the first network-connected boot.
+
+### Temporary Identity Plan
+
+| Physical node | Ubuntu short hostname | SSH user | Reserved DHCP address | Final OKD address |
+|---|---|---|---:|---:|
+| First labeled system | `okd-cp-01` | `sean` | `192.168.40.26` | `192.168.40.26` |
+| Second labeled system | `okd-cp-02` | `sean` | `192.168.40.27` | `192.168.40.27` |
+| Third labeled system | `okd-cp-03` | `sean` | `192.168.40.28` | `192.168.40.28` |
+
+Use the short hostname exactly as shown. The benchmark preflight requires the Ansible inventory name to equal `hostname -s`. Do not enter an FQDN in the Ubuntu server-name field.
+
+Use the same strong, temporary sudo password for `sean` on all three systems and store it in the password manager. The benchmark wrapper prompts once with `--ask-become-pass` and uses that password on every node. Do not put it in Git, an inventory file, a shell command, or the benchmark log. OKD later erases these Ubuntu accounts and passwords.
+
+### 1. Prepare and Label One System
+
+Work on only one chassis at a time so the hostname, onboard MAC, and SSD serial cannot be assigned to the wrong node.
+
+1. Install its intended 1 TB Patriot P400 Lite SSD.
+2. Label the chassis `okd-cp-01`, `okd-cp-02`, or `okd-cp-03` before powering it on.
+3. Leave its Ethernet cable disconnected.
+4. Connect a keyboard, display, and the verified Ubuntu Server 26.04 installer USB.
+5. Open HP Computer Setup with `F10` and apply the firmware baseline in [Build 04, Step 3](../build/compact-okd.md#step-3-inventory-and-prepare-each-ryzen-node).
+6. Record the chassis serial, firmware version, onboard Ethernet MAC, installed memory, SSD model, and SSD serial in the private asset inventory.
+7. Confirm the installer USB and 1 TB internal SSD are distinguishable by size and model before proceeding.
+
+Reuse the same ISO and USB-writing method for all three nodes. Retain the ISO filename and its verified published SHA-256 checksum with the benchmark notes so the baseline can be reproduced.
+
+### 2. Use These Ubuntu Installer Values
+
+Choose the normal Ubuntu Server installation, not Ubuntu Desktop and not the minimized server option.
+
+| Installer screen | Value |
+|---|---|
+| Language and keyboard | Use the same preferred English locale and keyboard layout on all three nodes. |
+| Installer update | Skip it while offline. All nodes receive the same package-update pass after network onboarding. |
+| Installation type | Full Ubuntu Server; do not select minimized. |
+| Network | Leave the onboard Ethernet interface on automatic/DHCP and continue without network. Do not create the final OKD static configuration in Ubuntu. |
+| Proxy | Blank. |
+| Ubuntu archive mirror | Accept the offline-media path; do not invent a proxy or mirror to bypass the connectivity check. |
+| Storage | Guided use of the entire internal 1 TB SSD with the default LVM layout. No encryption, ZFS, or firmware RAID. |
+| Storage confirmation | Verify the selected target by its recorded model, serial, and approximately 1 TB size. Never select the installer USB. |
+| Your name | A descriptive local value such as `Sean`; it does not affect automation. |
+| Server name | The exact short hostname from the identity table, such as `okd-cp-01`. |
+| Username | `sean` on every node. |
+| Password | The shared strong, temporary benchmark sudo password stored outside Git. |
+| Ubuntu Pro | Skip for this disposable benchmark installation. |
+| OpenSSH | Install OpenSSH Server. Do not import an online identity while the installer is offline. |
+| Featured snaps | Select none. |
+
+The default unencrypted LVM layout is intentional. It provides a consistent disposable operating system without adding encryption-unlock prompts or a storage design that OKD will immediately erase. Do not install `qemu-guest-agent`; these systems are bare metal, not Proxmox guests.
+
+Let installation finish, select reboot, remove the installer USB when prompted, and verify the machine boots from the internal SSD. Log in locally once as `sean`, then shut it down:
+
+```bash
+hostname -s
+sudo poweroff
+```
+
+The hostname must match the chassis label before the machine is connected to the homelab.
+
+### 3. Prepare Its Switch Port and DHCP Reservation
+
+While the node is powered off:
+
+1. Configure its physical switch port as a native/access port on Servers VLAN `40`, with tagged VLANs blocked.
+2. Confirm the planned address is unused. From `utility-01`, use the interface attached to `192.168.40.0/24`, commonly `ens18`:
+
+   ```bash
+   sudo arping -D -I <UTILITY_INTERFACE> -c 3 192.168.40.26
+   ```
+
+   Substitute `.27` or `.28` for the other nodes. Stop and investigate if any probe receives a reply.
+3. In UniFi, create a Servers-network DHCP reservation mapping the recorded onboard MAC to the node's planned address.
+4. Do not activate `okd.lab.seandre.dev`, its host records, or the UniFi Forward Domain yet. Use the reserved IP for temporary Ubuntu SSH.
+5. Connect the onboard Ethernet port to the prepared switch port and boot the node.
+
+Reusing `.26-.28` for temporary Ubuntu makes the existing benchmark inventory work without changing the final OKD address plan. DHCP remains the temporary Ubuntu source of truth; the later Agent installer supplies the final static OKD network configuration.
+
+### 4. Verify the First Network-Connected Boot
+
+At the local console, confirm the expected identity, lease, default route, DNS, and time configuration:
+
+```bash
+hostname -s
+ip -brief link
+ip -4 -brief address
+ip route
+resolvectl status
+ping -c 3 192.168.40.1
+```
+
+The short hostname must be correct, the onboard interface must be `UP`, the address must match its reservation, and the default route and DNS must point through `192.168.40.1`.
+
+If the disconnected installer did not leave the onboard NIC on DHCP, identify its name with `ip -brief link`, then edit the existing file under `/etc/netplan/` so it contains the equivalent of:
+
+```yaml
+network:
+  version: 2
+  ethernets:
+    <ONBOARD_INTERFACE>:
+      dhcp4: true
+      dhcp6: false
+```
+
+Replace `<ONBOARD_INTERFACE>` with the actual wired interface, commonly `eno1`. Keep only one active definition for that interface, validate it from the console, and apply it:
+
+```bash
+sudo netplan generate
+sudo netplan apply
+ip -4 -brief address
+ip route
+```
+
+Do not copy an interface name from another node; verify each system independently.
+
+### 5. Bootstrap SSH from the Approved MacBook
+
+The UniFi Trusted-to-Servers rule is limited to the approved MacBook, and Teleport has a separate VPN-to-Servers path. From the MacBook, connect by reserved IP with the temporary password, then install the exact key selected by this repository's `ansible.cfg`:
+
+```bash
+ssh sean@192.168.40.26
+ssh-copy-id -i ~/.ssh/id_ed25519_github.pub sean@192.168.40.26
+ssh -i ~/.ssh/id_ed25519_github sean@192.168.40.26
+```
+
+Repeat with `.27` and `.28`. Keep the first session open until the key-authenticated session succeeds. If a node has been reinstalled and SSH reports a changed host key, compare the new fingerprint at the local console before deliberately removing the old entry:
+
+```bash
+ssh-keygen -R 192.168.40.26
+```
+
+After key authentication works, password-based SSH may be disabled, but keep the local `sean` password because Ansible uses it for sudo. Validate any SSH change before closing the console or working session.
+
+### 6. Apply the Same Post-Install Baseline
+
+On each node, set the timezone, enable network time, install all current updates, and add only the packages needed for administration, inventory, and storage validation:
+
+```bash
+sudo timedatectl set-timezone America/Los_Angeles
+sudo timedatectl set-ntp true
+
+sudo apt update
+sudo apt full-upgrade -y
+sudo apt install -y \
+  fio \
+  lm-sensors \
+  openssh-server \
+  python3 \
+  smartmontools
+
+sudo systemctl enable --now ssh
+test -x /usr/bin/sudo.ws
+sudo reboot
+```
+
+Ubuntu 26.04 must provide `/usr/bin/sudo.ws`; the benchmark inventory selects it because Ansible's become prompt is not compatible with the default sudo-rs prompt. Stop and fix the baseline if `test -x /usr/bin/sudo.ws` fails.
+
+Do not enable UFW on these temporary installations. The upstream HPL workflow configures inter-node SSH and runs MPI traffic among all three Servers-VLAN hosts; a default host firewall can break that traffic or skew troubleshooting. The UniFi Servers zone still prevents these nodes from initiating into client, IoT, Services, Management, Internal, or VPN zones, and no service is forwarded from the public Internet.
+
+After reboot, collect the same facts on every node:
+
+```bash
+hostnamectl
+timedatectl
+uname -r
+nproc
+free -h
+ip -brief link
+ip -4 -brief address
+lsblk -e7 -o NAME,PATH,SIZE,MODEL,SERIAL,TYPE,TRAN
+sudo smartctl --all /dev/<INSTALL_DISK>
+```
+
+Expected results include the correct short hostname, synchronized time, 12 logical CPUs, the reserved address, 16 GB initial memory, and one approximately 1 TB installation SSD. Replace `<INSTALL_DISK>` with the verified internal SSD, not a partition and never a USB device.
+
+### 7. Repeat, Then Validate All Three Together
+
+Power off or leave the completed node running, then repeat the same labeled procedure for the next chassis. Do not reuse a hostname, reservation, MAC, or recorded SSD identity.
+
+After all three nodes are online, run these checks from the repository root on the MacBook:
+
+```bash
+ansible benchmark_baremetal --list-hosts
+ansible benchmark_baremetal -m ping
+ansible benchmark_baremetal -a 'hostname -s'
+ansible benchmark_baremetal -a 'nproc'
+ansible benchmark_baremetal \
+  --become \
+  --ask-become-pass \
+  -a 'id -u'
+```
+
+The host list must contain exactly `okd-cp-01`, `okd-cp-02`, and `okd-cp-03`; every ping must return `pong`; hostnames must match inventory; every `nproc` must return `12`; and the become check must return `0`.
+
+Before measuring performance, reboot all three nodes after the same update pass and wait for startup activity to settle. Do not run package upgrades, SMART long tests, `fio`, backups, or other load while HPL is running.
+
 ## Prerequisites
 
 All six benchmark hosts must run Ubuntu 20.04 or newer, be reachable as SSH user `sean`, and allow Ansible to use sudo. Inventory names must match each machine's short hostname. Install the Ansible collections referenced by upstream once:
