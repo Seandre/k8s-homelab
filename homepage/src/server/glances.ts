@@ -18,7 +18,7 @@ const GlancesResponseSchema = z.object({
   diskio: z.union([z.record(z.string(), DiskIoEntrySchema), z.array(DiskIoEntrySchema)]).optional(),
   network: z.union([z.record(z.string(), NetworkEntrySchema), z.array(NetworkEntrySchema)]).optional(),
   sensors: z.array(z.object({ label: z.string(), value: z.number() })).optional(),
-  uptime: z.number().int().nonnegative().optional(),
+  uptime: z.union([z.number().int().nonnegative(), z.string().min(1)]).optional(),
 });
 export interface GlancesFetchResponse { ok: boolean; json(): Promise<unknown>; }
 export type GlancesFetch = (url: string) => Promise<GlancesFetchResponse>;
@@ -58,7 +58,7 @@ export class GlancesAdapter {
       const networkIngressBytes = network?.bytes_recv_rate_per_sec ?? network?.rx;
       const networkEgressBytes = network?.bytes_sent_rate_per_sec ?? network?.tx;
       const temp = normalized.value.sensors?.find((sensor) => /package|cpu temp/i.test(sensor.label))?.value ?? null;
-      return { ...output, cpuPercent: normalized.value.cpu?.total ?? null, memoryPercent: normalized.value.mem?.percent ?? null, memoryUsedBytes: normalized.value.mem?.used ?? null, memoryTotalBytes: normalized.value.mem?.total ?? null, diskUsedBytes: fs?.used ?? null, diskTotalBytes: fs?.size ?? null, diskIoPercent: disk ? null : null, temperatureCelsius: temp, uptimeSeconds: normalized.value.uptime ?? null, networkIngressBitsPerSecond: networkIngressBytes === undefined ? null : networkIngressBytes * 8, networkEgressBitsPerSecond: networkEgressBytes === undefined ? null : networkEgressBytes * 8 };
+      return { ...output, cpuPercent: normalized.value.cpu?.total ?? null, memoryPercent: normalized.value.mem?.percent ?? null, memoryUsedBytes: normalized.value.mem?.used ?? null, memoryTotalBytes: normalized.value.mem?.total ?? null, diskUsedBytes: fs?.used ?? null, diskTotalBytes: fs?.size ?? null, diskIoPercent: disk ? null : null, temperatureCelsius: temp, uptimeSeconds: typeof normalized.value.uptime === 'number' ? normalized.value.uptime : null, networkIngressBitsPerSecond: networkIngressBytes === undefined ? null : networkIngressBytes * 8, networkEgressBitsPerSecond: networkEgressBytes === undefined ? null : networkEgressBytes * 8 };
     }));
   }
 }
