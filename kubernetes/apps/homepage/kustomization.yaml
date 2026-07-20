@@ -4,6 +4,7 @@ resources:
   - namespace.yaml
   - serviceaccount.yaml
   - rbac.yaml
+  - custom-k3s-readonly-rbac.yaml
   - configmap.yaml
   - deployment.yaml
   - service.yaml

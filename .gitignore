@@ -42,3 +42,10 @@ tmp/
 .cache/
 diagnostics/
 benchmark-results/
+
+# Homepage local build and test artifacts
+homepage/node_modules/
+homepage/dist/
+homepage/test-results/
+homepage/playwright-report/
+homepage/tests/e2e/dashboard.spec.ts-snapshots/*-chromium-darwin.png

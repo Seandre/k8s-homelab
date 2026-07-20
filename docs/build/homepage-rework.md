@@ -315,7 +315,7 @@ placeholder.
 
 **Prerequisites:** HP-008.
 
-**Start:** The Overview route contains a placeholder.
+**Start:** The Overview route contains the approved HP-007A fixture composition.
 
 **Work:** Implement global state, alerts, matching `pve-01`/`pve-02` summaries,
 aggregate k3s/future OKD health, network summary, service status, and weather using
@@ -993,9 +993,9 @@ scope.
 ## Final v1 Evidence Checklist
 
 - [ ] Gate A — baseline and data-source map approved.
-- [ ] Gate B1 — high-fidelity desktop/mobile mockups approved.
-- [ ] Gate B2 — responsive shell and interactions approved.
-- [ ] Gate C — integrations and least-privilege security approved.
+- [x] Gate B1 — high-fidelity desktop/mobile mockups approved (2026-07-19).
+- [x] Gate B2 — responsive shell and interactions approved (2026-07-19).
+- [x] Gate C — integrations and least-privilege security approved (2026-07-20).
 - [ ] Gate D — preview deployment and soak approved.
 - [ ] All agreed links and daily utilities are present.
 - [ ] Live, stale, no-data, not-provisioned, and unsupported states are distinct.

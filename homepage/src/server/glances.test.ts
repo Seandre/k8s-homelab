@@ -1,0 +1,21 @@
+import { describe, expect, it } from 'vitest';
+import { GlancesAdapter, type GlancesFetch } from './glances.js';
+import type { Clock } from './normalization.js';
+
+const clock: Clock = { now: () => new Date('2026-07-19T12:00:00.000Z') };
+const hosts = [{ id: 'pve-01', name: 'pve-01', endpoint: 'http://192.168.40.20:61208' }];
+
+describe('temporary Glances bridge', () => {
+  it('normalizes only approved host summary fields and tolerates missing sensors/devices', async () => {
+    const fetcher: GlancesFetch = async () => ({ ok: true, json: async () => ({ cpu: { total: 42 }, mem: { percent: 58, used: 100, total: 200 }, fs: [{ mnt_point: '/', used: 40, size: 100 }], network: { vmbr0: { rx: 10, tx: 20 } }, uptime: 60 }) });
+    const host = (await new GlancesAdapter(hosts, fetcher, true, clock).read())[0]!;
+    expect(host).toMatchObject({ cpuPercent: 42, memoryPercent: 58, diskUsedBytes: 40, networkIngressBitsPerSecond: 80, networkEgressBitsPerSecond: 160, temperatureCelsius: null });
+    expect(host).not.toHaveProperty('raw');
+  });
+
+  it('uses an explicit unsupported state when the temporary bridge is disabled', async () => {
+    const fetcher: GlancesFetch = async () => { throw new Error('must not be called'); };
+    const host = (await new GlancesAdapter(hosts, fetcher, false, clock).read())[0]!;
+    expect(host.metadata.freshness).toBe('NOT_SUPPORTED');
+  });
+});
