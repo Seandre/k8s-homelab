@@ -9,7 +9,7 @@ Use the explicit VitePress sidebar and the numbered entries below as the navigat
 3. [Learning Roadmap](learning-roadmap.md) tracks the broader project backlog.
 4. [Architecture Decisions](architecture-decisions.md) records durable design choices and rationale.
 5. [Homelab Homepage Architecture](homepage-architecture.md) defines the approved product, telemetry, security, deployment, and migration design for the custom btop-inspired homepage. **Implemented on k3s and serving production after the approved HP-029 cutover; the stock deployment remains the rollback target.**
-6. [Homelab Homepage Rework Build Plan](../build/homepage-rework.md) divides the implementation into bounded agent-sized tasks with prerequisites, start and end states, acceptance criteria, human approval gates, preview deployment, cutover, and rollback. **HP-029 cutover, HP-030 rollback/forward recovery, and HP-031 documentation closeout are complete; visual snapshot baseline review remains a documented follow-up.**
+6. [Homelab Homepage Rework Build Plan](../build/homepage-rework.md) divides the implementation into bounded agent-sized tasks with prerequisites, start and end states, acceptance criteria, human approval gates, preview deployment, cutover, and rollback. **HP-029 cutover, HP-030 rollback/forward recovery, HP-031 documentation closeout, and the owner-approved visual baseline update are complete.**
 
 ## Required Build Sequence
 
@@ -37,4 +37,4 @@ Do not activate the OKD private records before `bastion-01` is operational. Do n
 5. [Proxmox Backup Server](../operations/proxmox-backup-server.md) builds `pbs-01` on `pve-01` and proves an isolated Nexus restore before Nexus becomes an OKD dependency. **Complete.**
 6. [Custom Homepage Preview and Rollback](../operations/homepage-rework.md) covers credential-safe preview deployment, verification, rotation, production cutover, and Git-only rollback. **Production cutover and the HP-030 rollback/forward-recovery drill passed; stock resources remain the rollback target.**
 7. [Homepage Observability Expansion](../operations/homepage-observability.md) records Prometheus, host-exporter, and strict-TLS local UniFi PDU operation. **PDU mapping is enabled at `c3d8968`; the shortened Gate D technical closeout and production monitoring checks passed.**
-8. [Homepage v1 Evidence](homepage-v1-evidence.md) maps each architecture acceptance criterion to repository or operational evidence and identifies the remaining visual-baseline follow-up.
+8. [Homepage v1 Evidence](homepage-v1-evidence.md) maps each architecture acceptance criterion to repository or operational evidence and records the owner-approved visual baseline update.

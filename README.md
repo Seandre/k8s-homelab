@@ -103,7 +103,7 @@ using the commands in [homepage/README.md](homepage/README.md). The
 covers credential provisioning, preview verification, GitOps deployment,
 production smoke checks, and Git-only rollback/forward recovery. The
 [v1 evidence index](docs/overview/homepage-v1-evidence.md) records the current
-acceptance status, including the outstanding visual-baseline follow-up.
+acceptance status, including the owner-approved visual baselines.
 
 ## Current Direction
 

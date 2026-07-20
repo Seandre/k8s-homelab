@@ -316,9 +316,9 @@ ConfigMap, Service, Ingress, TLS Secret, ServiceAccount, and RBAC remain
 intentionally deployed; removal requires a separate approved retention plan.
 
 OKD deployment ownership, an OKD overlay, manual cross-cluster switching, and
-automatic failover remain deferred. The evidence index also records the six
-visual snapshot comparisons that need baseline review; they are not represented
-as a passed acceptance criterion.
+automatic failover remain deferred. The owner approved the six visual snapshot
+baseline updates after review; the focused six-case suite and full nine-test
+browser suite passed.
 
 ## Credential provisioning and rotation
 

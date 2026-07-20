@@ -37,23 +37,21 @@ Last updated: 2026-07-20T22:23:00Z
 - Documentation image workflow deployed
   `ghcr.io/seandre/k8s-homelab-docs:sha-69ec88b` through the Git-managed docs
   Deployment. `npm run build` and `git diff --check` passed.
-- HP-031 documentation closeout is complete in the working tree. README, the
+- HP-031 documentation closeout is complete. README, the
   architecture and documentation order, the operations runbook, the decision
   log, the historical implementation baseline, and the Homepage README now
   point to the current production/rollback state. The criterion-by-criterion
   [v1 evidence index](docs/overview/homepage-v1-evidence.md) marks only
   supported criteria as confirmed.
-- The repository E2E suite passed keyboard, layout-control, and serious/critical
-  accessibility checks; six visual snapshot comparisons differed from checked-in
-  baselines by 15–50 px in page height and remain an explicit follow-up. Do not
-  regenerate or mark those baselines approved without visual review.
+- The owner approved the six visual baseline updates. The focused six-case suite
+  and full nine-test repository E2E suite passed keyboard, layout-control,
+  visual, and serious/critical accessibility checks.
 
-## Next task: review the v1 visual snapshot follow-up
+## Next task: continue the non-homepage sequence
 
-HP-031 is complete. The next homepage-specific task is to review the six
-desktop/tablet/mobile visual snapshot differences, determine whether they are
-intentional layout changes or regressions, and update baselines only after that
-review. Keep OKD deployment/ownership and automatic failover deferred.
+HP-031 and the approved visual baseline follow-up are complete. There is no
+remaining Homepage approval gate. Keep OKD deployment/ownership and automatic
+failover deferred.
 
 The completed HP-030 drill verified:
 
@@ -74,8 +72,7 @@ metrics, add outlet-control access, or commit any Secret/API key content.
 ## Completed task
 
 - HP-031: close v1 documentation and mark only acceptance criteria with actual
-  evidence. Completed in the working tree; the visual criterion remains open as
-  documented follow-up.
+  evidence. Complete, including the owner-approved visual baseline update.
 
 ## Subsequent non-homepage sequence
 
