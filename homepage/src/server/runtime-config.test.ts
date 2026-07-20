@@ -20,7 +20,12 @@ describe('Git-owned runtime configuration', () => {
     const weather = gitOwnedRuntimeConfig.sources.find((source) => source.id === 'weather-source')!;
     expect(weather).toMatchObject({ enabled: true, stateWhenDisabled: 'NOT_SUPPORTED' });
     expect(gitOwnedRuntimeConfig.featureFlags.prometheus).toBe(true);
+    expect(gitOwnedRuntimeConfig.pduPower).toEqual({ enabled: false, deviceName: 'USP-PDU-Pro' });
     expect(gitOwnedRuntimeConfig.probes.every((probe) => probe.target !== 'https://example.com')).toBe(true);
+  });
+
+  it('requires a non-empty Git-owned PDU device mapping', () => {
+    expect(() => loadRuntimeConfig({ ...gitOwnedRuntimeConfig, pduPower: { enabled: true, deviceName: '' } })).toThrow(RuntimeConfigurationError);
   });
 
   it('permits an explicitly Git-allowlisted private IP without enabling general target selection', () => {

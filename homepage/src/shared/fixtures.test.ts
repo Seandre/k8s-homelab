@@ -23,4 +23,9 @@ describe('shared contracts', () => {
     expect(BootstrapSchema.safeParse({ ...healthyBootstrapFixture, token: 'never' }).success).toBe(false);
     expect(BootstrapSchema.parse(healthyBootstrapFixture)).not.toHaveProperty('token');
   });
+
+  it('requires bootstrap schema version 2 for the public PDU power contract', () => {
+    expect(BootstrapSchema.safeParse({ ...healthyBootstrapFixture, schemaVersion: 1 }).success).toBe(false);
+    expect(healthyBootstrapFixture.network.pduPower).toMatchObject({ totalWatts: 143, metadata: { freshness: 'CURRENT' } });
+  });
 });

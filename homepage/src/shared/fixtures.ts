@@ -97,7 +97,7 @@ export const fixtureHosts: Host[] = [
     cpuCorePercentages: [62, 71, 64, 69, 66, 73, 61, 70],
     loadAverage: [0.78, 0.71, 0.66],
     cpuClockMhz: 2_800,
-    powerWatts: null,
+    powerWatts: 61,
     swapUsedBytes: 805_306_368,
     swapTotalBytes: 4_294_967_296,
     uptimeSeconds: 604_800,
@@ -279,6 +279,10 @@ export const fixtureNetwork: NetworkSummary = {
     controller: null,
     status: null,
     metadata: metadata('fixture-unifi', 'NOT_SUPPORTED', 'INFO', 'Local UniFi read-only API capability has not been verified.'),
+  },
+  pduPower: {
+    totalWatts: 143,
+    metadata: metadata('fixture-unpoller-pdu-power', 'CURRENT', 'OK'),
   },
   lastSpeedTest: {
     downloadMbps: 941.6,
@@ -475,7 +479,7 @@ export const fixtureWeather: Weather = {
 };
 
 export const healthyBootstrapFixture: Bootstrap = {
-  schemaVersion: 1,
+  schemaVersion: 2,
   generatedAt: FIXTURE_TIME,
   globalSeverity: 'WARN',
   alerts: fixtureAlerts,

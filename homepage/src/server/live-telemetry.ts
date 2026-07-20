@@ -104,7 +104,7 @@ export class LiveTelemetry {
       { id: 'pve-01', name: 'pve-01', endpoint: 'http://192.168.40.20:61208' },
       { id: 'pve-02', name: 'pve-02', endpoint: 'http://192.168.40.25:61208' },
     ], (url) => this.httpFetch(url) as ReturnType<GlancesFetch>, this.runtimeConfig.featureFlags.proxmox);
-    this.prometheus = new PrometheusAdapter(this.sourceEndpoint('prometheus-source'), this.runtimeConfig.featureFlags.prometheus);
+    this.prometheus = new PrometheusAdapter(this.sourceEndpoint('prometheus-source'), this.runtimeConfig.featureFlags.prometheus, this.runtimeConfig.pduPower);
     this.alertmanager = new AlertmanagerAdapter('http://kube-prometheus-stack-alertmanager.monitoring.svc:9093', this.runtimeConfig.featureFlags.prometheus);
     this.weather = new OpenMeteoAdapter({ fetch: (url) => this.httpFetch(url), latitude: runtimeConfig.weatherLocation.latitude, longitude: runtimeConfig.weatherLocation.longitude, enabled: runtimeConfig.featureFlags.weather });
     this.probes = new AllowlistedProbeRunner(runtimeConfig, (url, init) => fetch(url, init), { now: () => new Date() });
@@ -192,9 +192,10 @@ export class LiveTelemetry {
   }
 
   async refresh() {
-    const [proxmox, glances, k3s, prometheus, alerts, argocd, pbs, unifi, weather, probes] = await Promise.all([
+    const [proxmox, glances, k3s, prometheus, pduPower, alerts, argocd, pbs, unifi, weather, probes] = await Promise.all([
       this.proxmoxHosts(), this.glancesHosts(), this.k3sSnapshot(),
       this.prometheus.readCluster((url) => this.httpFetch(url)),
+      this.prometheus.readPduPower((url) => this.httpFetch(url)),
       this.alertmanager.read((url) => this.httpFetch(url)),
       this.argocdApplications(), this.pbsSnapshot(), this.unifiSnapshot(), this.weather.read(), this.probes.runConfigured(),
     ]);
@@ -202,7 +203,8 @@ export class LiveTelemetry {
     const byId = <T extends { id: string }>(items: T[]) => new Map(items.map((item) => [item.id, item]));
     const proxmoxById = byId(proxmox);
     const glancesById = byId(glances);
-    const proxmoxHosts = ['pve-01', 'pve-02'].map((id) => mergedHost(id, id, proxmoxById.get(id), glancesById.get(id), now));
+    const pduWatts: Record<string, number | null> = { 'pve-01': pduPower.pve01Watts, 'pve-02': pduPower.pve02Watts };
+    const proxmoxHosts = ['pve-01', 'pve-02'].map((id) => ({ ...mergedHost(id, id, proxmoxById.get(id), glancesById.get(id), now), powerWatts: pduWatts[id] ?? null }));
     for (const host of proxmoxHosts) this.recordHost(host, now);
     const base = this.emptyBootstrap();
     base.generatedAt = now;
@@ -222,6 +224,7 @@ export class LiveTelemetry {
     base.alerts = alerts;
     base.timeSeries = this.timeSeries(proxmoxHosts);
     if (pbs) { base.storage = pbs.storage; base.storageBackups = pbs.backups; }
+    base.network = { ...base.network, pduPower: { totalWatts: pduPower.totalWatts, metadata: pduPower.metadata } };
     if (unifi) base.network = { ...base.network, ...unifi, metadata: unifi.unifi.metadata };
     base.weather = weather;
     base.services = this.liveServices(probes, argocd);
@@ -242,7 +245,7 @@ export class LiveTelemetry {
     base.timeSeries = [];
     const observedAt = new Date().toISOString();
     const unavailable: SourceMetadata = { source: 'live-telemetry', observedAt, freshness: 'NO_DATA', severity: 'INFO', message: 'No successful live sample is available.' };
-    base.network = { ...base.network, gatewayLatencyMs: null, gatewayLatencyProtocol: null, internetLatencyMs: null, internetLatencyProtocol: null, unifi: { controller: null, status: null, metadata: unavailable }, lastSpeedTest: { downloadMbps: null, uploadMbps: null, latencyMs: null, observedAt: null, metadata: unavailable }, metadata: unavailable };
+    base.network = { ...base.network, gatewayLatencyMs: null, gatewayLatencyProtocol: null, internetLatencyMs: null, internetLatencyProtocol: null, unifi: { controller: null, status: null, metadata: unavailable }, pduPower: { totalWatts: null, metadata: unavailable }, lastSpeedTest: { downloadMbps: null, uploadMbps: null, latencyMs: null, observedAt: null, metadata: unavailable }, metadata: unavailable };
     base.storage = { ...base.storage, pbs: { ...base.storage.pbs, reachable: null, metadata: unavailable } };
     base.storageBackups = [];
     base.services = [];

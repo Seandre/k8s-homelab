@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: unpoller-unifi-ca
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: unpoller
+    app.kubernetes.io/component: unifi-pdu-exporter
+data:
+  # Public leaf/root certificate presented by https://unifi.local on 2026-07-20.
+  # SHA-256: B1:85:35:85:E2:69:30:D9:2D:5B:AA:95:F0:6B:12:F4:2E:3B:01:91:1B:C4:62:76:95:22:89:89:DD:C8:48:41
+  unifi-ca.crt: |
+    -----BEGIN CERTIFICATE-----
+    MIIDNTCCAh2gAwIBAgIJHFNglfUI2LczMA0GCSqGSIb3DQEBCwUAMBYxFDASBgNV
+    BAMTC3VuaWZpLmxvY2FsMB4XDTI2MDMwNzA4MDAwMFoXDTI4MDYwOTA3MDAwMFow
+    FjEUMBIGA1UEAxMLdW5pZmkubG9jYWwwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAw
+    ggEKAoIBAQDHhYEidRCenZWfPa/ycDndPgiM9pko7XUKxpgdnKOne3dx5E065OLb
+    2VktnpsioNW/E6DVvUWqmAkQsda5nuAAvYOFL0KpgZhiKsowRAcdAWVAxwVd2xgn
+    KXdJcT6ZwPUtlMupq7dMoir4pZJH5+40DtduEp+sre5avU4wRaktNeWSFazPly5Z
+    M5s7dvQBSznn/SakFH0h4nlp5wVJ838y3rg/Jb1aXAzgJc/uZtwf4tZkliyZYKxX
+    yeMBZwNltUyLe3Brh2b/VllduKsI5kYeVU1x7bDuo/NbuZw4Hg177H6TS/lfRBKq
+    vwZ/yTek5O1uMmMfbDvJSUtDF4uQ5ZwbAgMBAAGjgYUwgYIwCwYDVR0PBAQDAgL0
+    MDEGA1UdJQQqMCgGCCsGAQUFBwMBBggrBgEFBQcDAgYIKwYBBQUHAwMGCCsGAQUF
+    BwMIMEAGA1UdEQQ5MDeCC3VuaWZpLmxvY2Fsgglsb2NhbGhvc3SCBVs6OjFdhwR/
+    AAABhxD+gAAAAAAAAAAAAAAAAAABMA0GCSqGSIb3DQEBCwUAA4IBAQCjf3bgUqvk
+    2V9EotwF4PqNA2MkDgG2QhIC4slpqnNpBPSCdPAZu8g5ySJ9dq57n9WMkPBRRZNf
+    /iJw/2vTmMroBZCRhtYWk0r377e6ooolh1mhj5pogG0iw1M7kNwV0sg+IOxJmrFw
+    wz726FmHJahlAypRpeyKMD3Eu0W1JEgvcXHb0YquOcHk7tPgK2n4xBZjF30+awb8
+    TW/mlkoEx7saoh4WrMZZfdRC8nJyJlzflUD0VSQf+b2af5NEyW7Sps7JkKAZ/Ug6
+    BW/JvdcG6BNdfVbOtbyPeWDvQBWgxnXawQOtnVlr38caWl0ZpTi5jZ4O7C5YYY9d
+    MaGAdAtnG/1p
+    -----END CERTIFICATE-----

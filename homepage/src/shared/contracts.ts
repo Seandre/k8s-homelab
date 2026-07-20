@@ -123,6 +123,12 @@ export const SpeedTestResultSchema = z.object({
 });
 export type SpeedTestResult = z.infer<typeof SpeedTestResultSchema>;
 
+export const PduPowerSchema = z.object({
+  totalWatts: z.number().nonnegative().nullable(),
+  metadata: SourceMetadataSchema,
+});
+export type PduPower = z.infer<typeof PduPowerSchema>;
+
 export const NetworkSummarySchema = z.object({
   gatewayLatencyMs: z.number().nonnegative().nullable(),
   gatewayLatencyProtocol: LatencyProtocolSchema.nullable(),
@@ -131,6 +137,7 @@ export const NetworkSummarySchema = z.object({
   ingressVip: z.string().ip().nullable(),
   ingressVips: z.array(z.string().ip()).min(1),
   unifi: UniFiStateSchema,
+  pduPower: PduPowerSchema,
   lastSpeedTest: SpeedTestResultSchema,
   metadata: SourceMetadataSchema,
 });
@@ -194,7 +201,7 @@ export const WeatherSchema = z.object({
 export type Weather = z.infer<typeof WeatherSchema>;
 
 export const BootstrapSchema = z.object({
-  schemaVersion: z.literal(1),
+  schemaVersion: z.literal(2),
   generatedAt: z.string().datetime({ offset: true }),
   globalSeverity: SeveritySchema,
   alerts: z.array(AlertSchema),

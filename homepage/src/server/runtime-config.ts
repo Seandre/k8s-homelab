@@ -9,6 +9,7 @@ const ServiceLinkSchema = z.object({ id: z.string().min(1), label: z.string().mi
 const SourceSchema = z.object({ id: z.string().min(1), enabled: z.boolean(), endpoint: HttpUrlSchema, timeoutMs: z.number().int().min(100).max(10_000), stateWhenDisabled: z.enum(['NOT_PROVISIONED', 'NOT_SUPPORTED']) }).strict();
 const ProbeSchema = z.object({ id: z.string().min(1), sourceId: z.string().min(1), target: HttpUrlSchema, protocol: z.enum(['HTTPS', 'TCP', 'DNS']), intervalMs: z.number().int().min(1_000).max(300_000) }).strict();
 const CredentialReferenceSchema = z.object({ id: z.string().min(1), namespace: z.string().min(1), secretName: z.string().min(1), keys: z.array(z.string().min(1)).min(1) }).strict();
+const PduPowerConfigSchema = z.object({ enabled: z.boolean(), deviceName: z.string().min(1) }).strict();
 
 export const RuntimeConfigSchema = z.object({
   allowedHosts: z.array(z.string().min(1)).min(1),
@@ -18,6 +19,7 @@ export const RuntimeConfigSchema = z.object({
   sources: z.array(SourceSchema).min(1),
   probes: z.array(ProbeSchema),
   credentialReferences: z.array(CredentialReferenceSchema),
+  pduPower: PduPowerConfigSchema,
   historyMetrics: z.array(z.object({ metric: z.string().min(1), windows: z.array(z.enum(['5m', '15m', '1h'])).min(1) }).strict()).min(1),
   thresholds: z.object({ cpuWarnPercent: z.number().min(0).max(100), cpuCritPercent: z.number().min(0).max(100), backupWarnAgeSeconds: z.number().int().positive() }).strict(),
   weatherLocation: z.object({ postalCode: z.literal('97209'), latitude: z.number().min(-90).max(90), longitude: z.number().min(-180).max(180) }).strict(),
@@ -72,6 +74,9 @@ export const gitOwnedRuntimeConfig: RuntimeConfig = loadRuntimeConfig({
     { id: 'pbs-readonly', namespace: 'homepage', secretName: 'homepage-pbs-readonly', keys: ['server', 'token-id', 'token-secret', 'ca'] },
     { id: 'unifi-readonly', namespace: 'homepage', secretName: 'homepage-unifi-readonly', keys: ['server', 'token'] },
   ],
+  // Turn this on only after the Git-owned preflight in homepage-observability
+  // confirms this exact Prometheus `name` label and both outlet labels.
+  pduPower: { enabled: false, deviceName: 'USP-PDU-Pro' },
   historyMetrics: ['pve-01', 'pve-02'].flatMap((host) => ['CPU', 'MEMORY', 'DISK', 'RX', 'TX'].map((metric) => ({ metric: `${host} ${metric}`, windows: ['15m'] as const }))),
   thresholds: { cpuWarnPercent: 70, cpuCritPercent: 90, backupWarnAgeSeconds: 86_400 },
   weatherLocation: { postalCode: '97209', latitude: 45.527412, longitude: -122.686270 },
