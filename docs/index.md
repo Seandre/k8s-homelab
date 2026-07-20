@@ -13,6 +13,10 @@ Read the [complete documentation order](overview/documentation-order.md) for opt
 
 The approved [Homelab Homepage Architecture](overview/homepage-architecture.md) defines the planned btop-inspired replacement for the current Homepage application, including its views, telemetry sources, security boundary, k3s rollout, OKD migration, and rollback gates. Follow the [Homepage Rework Build Plan](build/homepage-rework.md) to implement it as bounded, acceptance-tested tasks while preserving the existing deployment as the rollback target.
 
+The preview’s live-source rollout, persistent Prometheus configuration, and
+host node_exporter prerequisite are documented in [Homepage Observability
+Expansion](operations/homepage-observability.md).
+
 ## Current Platform
 
 - Proxmox VE hosts the virtual machines.

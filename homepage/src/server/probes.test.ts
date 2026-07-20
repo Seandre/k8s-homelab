@@ -22,7 +22,8 @@ describe('allowlisted reachability probes', () => {
 
   it('does not issue requests while the probe feature is disabled', async () => {
     const fetcher: ProbeFetch = async () => { throw new Error('must not be called'); };
-    const result = await new AllowlistedProbeRunner(gitOwnedRuntimeConfig, fetcher, fakeClock()).run('argocd-probe');
+    const disabled = { ...gitOwnedRuntimeConfig, featureFlags: { ...gitOwnedRuntimeConfig.featureFlags, probes: false } };
+    const result = await new AllowlistedProbeRunner(disabled, fetcher, fakeClock()).run('argocd-probe');
     expect(result).toMatchObject({ status: 'DOWN', metadata: { freshness: 'NOT_SUPPORTED' } });
   });
 });

@@ -16,9 +16,10 @@ describe('Git-owned runtime configuration', () => {
     expect(() => loadRuntimeConfig({ ...gitOwnedRuntimeConfig, serviceLinks: [{ ...gitOwnedRuntimeConfig.serviceLinks[0]!, href: 'https://example.com' }] })).toThrow('not allowlisted');
   });
 
-  it('keeps disabled integrations in a declared neutral state instead of accepting browser overrides', () => {
+  it('keeps every integration Git-owned and limits probes to declared targets', () => {
     const weather = gitOwnedRuntimeConfig.sources.find((source) => source.id === 'weather-source')!;
-    expect(weather).toMatchObject({ enabled: false, stateWhenDisabled: 'NOT_SUPPORTED' });
+    expect(weather).toMatchObject({ enabled: true, stateWhenDisabled: 'NOT_SUPPORTED' });
+    expect(gitOwnedRuntimeConfig.featureFlags.prometheus).toBe(true);
     expect(gitOwnedRuntimeConfig.probes.every((probe) => probe.target !== 'https://example.com')).toBe(true);
   });
 

@@ -13,7 +13,9 @@ const NetworkEntrySchema = z.object({
 
 const GlancesResponseSchema = z.object({
   cpu: z.object({ total: z.number().min(0).max(100) }).optional(),
+  percpu: z.array(z.object({ total: z.number().min(0).max(100) })).optional(),
   mem: z.object({ percent: z.number().min(0).max(100), used: z.number().nonnegative().optional(), total: z.number().positive().optional() }).optional(),
+  memswap: z.object({ used: z.number().nonnegative().optional(), total: z.number().positive().optional() }).optional(),
   fs: z.array(z.object({ mnt_point: z.string(), used: z.number().nonnegative().optional(), size: z.number().positive().optional() })).optional(),
   diskio: z.union([z.record(z.string(), DiskIoEntrySchema), z.array(DiskIoEntrySchema)]).optional(),
   network: z.union([z.record(z.string(), NetworkEntrySchema), z.array(NetworkEntrySchema)]).optional(),
@@ -58,7 +60,7 @@ export class GlancesAdapter {
       const networkIngressBytes = network?.bytes_recv_rate_per_sec ?? network?.rx;
       const networkEgressBytes = network?.bytes_sent_rate_per_sec ?? network?.tx;
       const temp = normalized.value.sensors?.find((sensor) => /package|cpu temp/i.test(sensor.label))?.value ?? null;
-      return { ...output, cpuPercent: normalized.value.cpu?.total ?? null, memoryPercent: normalized.value.mem?.percent ?? null, memoryUsedBytes: normalized.value.mem?.used ?? null, memoryTotalBytes: normalized.value.mem?.total ?? null, diskUsedBytes: fs?.used ?? null, diskTotalBytes: fs?.size ?? null, diskIoPercent: disk ? null : null, temperatureCelsius: temp, uptimeSeconds: typeof normalized.value.uptime === 'number' ? normalized.value.uptime : null, networkIngressBitsPerSecond: networkIngressBytes === undefined ? null : networkIngressBytes * 8, networkEgressBitsPerSecond: networkEgressBytes === undefined ? null : networkEgressBytes * 8 };
+      return { ...output, cpuPercent: normalized.value.cpu?.total ?? null, cpuCorePercentages: normalized.value.percpu?.map((cpu) => cpu.total) ?? null, memoryPercent: normalized.value.mem?.percent ?? null, memoryUsedBytes: normalized.value.mem?.used ?? null, memoryTotalBytes: normalized.value.mem?.total ?? null, swapUsedBytes: normalized.value.memswap?.used ?? null, swapTotalBytes: normalized.value.memswap?.total ?? null, diskUsedBytes: fs?.used ?? null, diskTotalBytes: fs?.size ?? null, diskIoPercent: disk ? null : null, temperatureCelsius: temp, uptimeSeconds: typeof normalized.value.uptime === 'number' ? normalized.value.uptime : null, networkIngressBitsPerSecond: networkIngressBytes === undefined ? null : networkIngressBytes * 8, networkEgressBitsPerSecond: networkEgressBytes === undefined ? null : networkEgressBytes * 8 };
     }));
   }
 }

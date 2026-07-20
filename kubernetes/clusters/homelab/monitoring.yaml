@@ -37,7 +37,19 @@ spec:
 
         prometheus:
           prometheusSpec:
-            retention: 7d
+            # Homepage history depends on Prometheus surviving StatefulSet
+            # replacement. local-path is intentionally node-local; treat this
+            # as durable telemetry cache, not a host-loss backup.
+            retention: 30d
+            storageSpec:
+              volumeClaimTemplate:
+                spec:
+                  accessModes:
+                    - ReadWriteOnce
+                  storageClassName: local-path
+                  resources:
+                    requests:
+                      storage: 50Gi
   destination:
     server: https://kubernetes.default.svc
     namespace: monitoring

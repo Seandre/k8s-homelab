@@ -1,10 +1,19 @@
 import { readFile } from 'node:fs/promises';
-import type { Bootstrap, Host, SourceMetadata, TimeSeries } from '../shared/contracts.js';
+import type { Bootstrap, Host, ServiceStatus, SourceMetadata, TimeSeries } from '../shared/contracts.js';
 import { healthyBootstrapFixture } from '../shared/fixtures.js';
 import { GlancesAdapter, type GlancesFetch } from './glances.js';
+import { AlertmanagerAdapter } from './alertmanager.js';
+import { ArgoCdAdapter } from './argocd.js';
+import { K3sAdapter, type K3sReadClient } from './k3s.js';
 import { aggregateGlobalSeverity } from './normalization.js';
+import { OpenMeteoAdapter } from './open-meteo.js';
+import { PbsAdapter } from './pbs.js';
+import { PrometheusAdapter } from './prometheus.js';
 import { ProxmoxAdapter, type ProxmoxFetch, type ProxmoxHostConfig } from './proxmox.js';
+import { AllowlistedProbeRunner } from './probes.js';
+import { requestJson } from './request-json.js';
 import type { RuntimeConfig } from './runtime-config.js';
+import { UniFiAdapter } from './unifi.js';
 
 const POLL_INTERVAL_MS = 5_000;
 const HISTORY_LIMIT = 104;
@@ -53,7 +62,7 @@ function mergedHost(id: string, name: string, proxmox: Host | undefined, glances
     diskTotalBytes: value(proxmox?.diskTotalBytes ?? null, glances?.diskTotalBytes ?? null),
     diskIoPercent: value(glances?.diskIoPercent ?? null, proxmox?.diskIoPercent ?? null),
     cpuModel: proxmox?.cpuModel ?? null,
-    cpuCorePercentages: null,
+    cpuCorePercentages: glances?.cpuCorePercentages ?? null,
     loadAverage: proxmox?.loadAverage ?? null,
     cpuClockMhz: proxmox?.cpuClockMhz ?? null,
     powerWatts: null,
@@ -75,6 +84,14 @@ export class LiveTelemetry {
   private latest: Bootstrap | undefined;
   private timer: ReturnType<typeof setInterval> | undefined;
   private proxmox: ProxmoxAdapter | undefined;
+  private k3s: K3sAdapter | undefined;
+  private argocd: ArgoCdAdapter | undefined;
+  private pbs: PbsAdapter | undefined;
+  private unifi: UniFiAdapter | undefined;
+  private readonly prometheus: PrometheusAdapter;
+  private readonly alertmanager: AlertmanagerAdapter;
+  private readonly weather: OpenMeteoAdapter;
+  private readonly probes: AllowlistedProbeRunner;
   private readonly glances: GlancesAdapter;
 
   constructor(
@@ -87,6 +104,10 @@ export class LiveTelemetry {
       { id: 'pve-01', name: 'pve-01', endpoint: 'http://192.168.40.20:61208' },
       { id: 'pve-02', name: 'pve-02', endpoint: 'http://192.168.40.25:61208' },
     ], (url) => this.httpFetch(url) as ReturnType<GlancesFetch>, this.runtimeConfig.featureFlags.proxmox);
+    this.prometheus = new PrometheusAdapter(this.sourceEndpoint('prometheus-source'), this.runtimeConfig.featureFlags.prometheus);
+    this.alertmanager = new AlertmanagerAdapter('http://kube-prometheus-stack-alertmanager.monitoring.svc:9093', this.runtimeConfig.featureFlags.prometheus);
+    this.weather = new OpenMeteoAdapter({ fetch: (url) => this.httpFetch(url), latitude: runtimeConfig.weatherLocation.latitude, longitude: runtimeConfig.weatherLocation.longitude, enabled: runtimeConfig.featureFlags.weather });
+    this.probes = new AllowlistedProbeRunner(runtimeConfig, (url, init) => fetch(url, init), { now: () => new Date() });
   }
 
   async start() { await this.refresh(); this.timer = setInterval(() => { void this.refresh(); }, POLL_INTERVAL_MS); this.timer.unref(); }
@@ -113,19 +134,104 @@ export class LiveTelemetry {
     return this.glances.read();
   }
 
+  private sourceEndpoint(id: string) {
+    const endpoint = this.runtimeConfig.sources.find((source) => source.id === id)?.endpoint;
+    if (!endpoint) throw new Error(`Missing runtime source: ${id}`);
+    return endpoint;
+  }
+
+  private async k3sSnapshot() {
+    if (!this.k3s) {
+      const [token, caCertificate] = await Promise.all([
+        this.secretReader('/var/run/secrets/kubernetes.io/serviceaccount/token'),
+        this.secretReader('/var/run/secrets/kubernetes.io/serviceaccount/ca.crt'),
+      ]);
+      if (!token || !caCertificate) return null;
+      const request = (path: string) => requestJson(`https://kubernetes.default.svc${path}`, { headers: { authorization: `Bearer ${token}` }, caCertificate, timeoutMs: 3_000 }).then((response) => {
+        if (!response.ok) throw new Error(`Kubernetes API returned ${response.status}.`);
+        return response.json();
+      });
+      const client: K3sReadClient = {
+        listNodes: () => request('/api/v1/nodes'),
+        listDeployments: () => request('/apis/apps/v1/deployments'),
+        listStatefulSets: () => request('/apis/apps/v1/statefulsets'),
+        listDaemonSets: () => request('/apis/apps/v1/daemonsets'),
+        listNodeMetrics: () => request('/apis/metrics.k8s.io/v1beta1/nodes'),
+      };
+      this.k3s = new K3sAdapter(client);
+    }
+    return this.k3s.read();
+  }
+
+  private async argocdApplications() {
+    if (!this.argocd) {
+      const [server, token] = await Promise.all([this.secretReader(`${SECRET_ROOT}/argocd/server`), this.secretReader(`${SECRET_ROOT}/argocd/token`)]);
+      if (!server || !token) return null;
+      this.argocd = new ArgoCdAdapter(server, token, this.runtimeConfig.featureFlags.argocd);
+    }
+    return this.argocd.read((url, init) => this.httpFetch(url, init) as ReturnType<Parameters<ArgoCdAdapter['read']>[0]>);
+  }
+
+  private async pbsSnapshot() {
+    if (!this.pbs) {
+      const base = `${SECRET_ROOT}/pbs`;
+      const [server, tokenId, tokenSecret, caCertificate] = await Promise.all([this.secretReader(`${base}/server`), this.secretReader(`${base}/token-id`), this.secretReader(`${base}/token-secret`), this.secretReader(`${base}/ca`)]);
+      if (!server || !tokenId || !tokenSecret || !caCertificate) return null;
+      this.pbs = new PbsAdapter({ id: 'pbs-01', name: 'pbs-01', datastore: 'pve02-backups', server, tokenId, tokenSecret, caCertificate }, this.runtimeConfig.featureFlags.pbs);
+    }
+    return this.pbs.read((url, init) => requestJson(url, { headers: init.headers, caCertificate: init.caCertificate, timeoutMs: 5_000 }));
+  }
+
+  private async unifiSnapshot() {
+    if (!this.unifi) {
+      const [server, token] = await Promise.all([this.secretReader(`${SECRET_ROOT}/unifi/server`), this.secretReader(`${SECRET_ROOT}/unifi/token`)]);
+      if (!server || !token) return null;
+      this.unifi = new UniFiAdapter({ server, token }, this.runtimeConfig.featureFlags.unifi);
+    }
+    return this.unifi.read((url, init) => this.httpFetch(url, init) as ReturnType<Parameters<UniFiAdapter['read']>[0]>);
+  }
+
   async refresh() {
-    const [proxmox, glances] = await Promise.all([this.proxmoxHosts(), this.glancesHosts()]);
+    const [proxmox, glances, k3s, prometheus, alerts, argocd, pbs, unifi, weather, probes] = await Promise.all([
+      this.proxmoxHosts(), this.glancesHosts(), this.k3sSnapshot(),
+      this.prometheus.readCluster((url) => this.httpFetch(url)),
+      this.alertmanager.read((url) => this.httpFetch(url)),
+      this.argocdApplications(), this.pbsSnapshot(), this.unifiSnapshot(), this.weather.read(), this.probes.runConfigured(),
+    ]);
     const now = new Date().toISOString();
     const byId = <T extends { id: string }>(items: T[]) => new Map(items.map((item) => [item.id, item]));
     const proxmoxById = byId(proxmox);
     const glancesById = byId(glances);
-    const hosts = ['pve-01', 'pve-02'].map((id) => mergedHost(id, id, proxmoxById.get(id), glancesById.get(id), now));
-    for (const host of hosts) this.recordHost(host, now);
+    const proxmoxHosts = ['pve-01', 'pve-02'].map((id) => mergedHost(id, id, proxmoxById.get(id), glancesById.get(id), now));
+    for (const host of proxmoxHosts) this.recordHost(host, now);
     const base = this.emptyBootstrap();
     base.generatedAt = now;
-    base.hosts = [...hosts, ...base.hosts.filter((host) => host.kind !== 'PROXMOX')];
-    base.timeSeries = this.timeSeries(hosts);
-    base.globalSeverity = aggregateGlobalSeverity(hosts.map((host) => ({ metadata: host.metadata })));
+    base.hosts = [...proxmoxHosts, ...(k3s?.hosts ?? []) , ...base.hosts.filter((host) => host.kind === 'OKD_NODE')];
+    base.clusters = base.clusters.map((cluster) => {
+      if (cluster.platform !== 'K3S') return cluster;
+      if (!k3s) return { ...cluster, nodeCount: null, readyNodeCount: null, workloadCount: null, cpuCapacityCores: null, cpuUsedCores: null, memoryCapacityBytes: null, memoryUsedBytes: null, metadata: { source: 'k3s-api', observedAt: now, freshness: 'NO_DATA', severity: 'INFO', message: 'No successful k3s API sample is available.' } };
+      return {
+        ...k3s.cluster,
+        cpuCapacityCores: prometheus?.cpuCapacityCores ?? k3s.cluster.cpuCapacityCores,
+        cpuUsedCores: prometheus?.cpuUsedCores ?? k3s.cluster.cpuUsedCores,
+        memoryCapacityBytes: prometheus?.memoryCapacityBytes ?? k3s.cluster.memoryCapacityBytes,
+        memoryUsedBytes: prometheus?.memoryUsedBytes ?? k3s.cluster.memoryUsedBytes,
+      };
+    });
+    base.workloads = k3s?.workloads ?? [];
+    base.alerts = alerts;
+    base.timeSeries = this.timeSeries(proxmoxHosts);
+    if (pbs) { base.storage = pbs.storage; base.storageBackups = pbs.backups; }
+    if (unifi) base.network = { ...base.network, ...unifi, metadata: unifi.unifi.metadata };
+    base.weather = weather;
+    base.services = this.liveServices(probes, argocd);
+    base.globalSeverity = aggregateGlobalSeverity([
+      ...base.hosts.map((host) => ({ metadata: host.metadata })),
+      ...base.clusters.map((cluster) => ({ metadata: cluster.metadata })),
+      ...base.alerts.map((alert) => ({ metadata: alert.metadata })),
+      { metadata: base.network.metadata }, { metadata: base.storage.pbs.metadata }, { metadata: base.weather.metadata },
+      ...base.services.map((service) => ({ metadata: service.metadata })),
+    ]);
     this.latest = base;
     this.publish(base);
   }
@@ -134,7 +240,24 @@ export class LiveTelemetry {
     const base = structuredClone(healthyBootstrapFixture);
     base.alerts = [];
     base.timeSeries = [];
+    const observedAt = new Date().toISOString();
+    const unavailable: SourceMetadata = { source: 'live-telemetry', observedAt, freshness: 'NO_DATA', severity: 'INFO', message: 'No successful live sample is available.' };
+    base.network = { ...base.network, gatewayLatencyMs: null, gatewayLatencyProtocol: null, internetLatencyMs: null, internetLatencyProtocol: null, unifi: { controller: null, status: null, metadata: unavailable }, lastSpeedTest: { downloadMbps: null, uploadMbps: null, latencyMs: null, observedAt: null, metadata: unavailable }, metadata: unavailable };
+    base.storage = { ...base.storage, pbs: { ...base.storage.pbs, reachable: null, metadata: unavailable } };
+    base.storageBackups = [];
+    base.services = [];
+    base.weather = { ...base.weather, temperatureFahrenheit: null, condition: null, sunrise: null, sunset: null, usAqi: null, pm25: null, pm10: null, conditionsMetadata: unavailable, airQualityMetadata: unavailable, metadata: unavailable };
     return base;
+  }
+
+  private liveServices(probes: Awaited<ReturnType<AllowlistedProbeRunner['runConfigured']>>, argocd: Awaited<ReturnType<ArgoCdAdapter['read']>>): ServiceStatus[] {
+    const probeById = new Map(probes.map((probe) => [probe.id, probe]));
+    const argoSeverity = argocd?.reduce<SourceMetadata['severity']>((highest, app) => ({ OK: 0, INFO: 1, WARN: 2, CRIT: 3 }[app.metadata.severity] > { OK: 0, INFO: 1, WARN: 2, CRIT: 3 }[highest] ? app.metadata.severity : highest), 'OK');
+    return this.runtimeConfig.serviceLinks.map((link) => {
+      const probe = probeById.get(`${link.id}-probe`) ?? (link.id === 'argocd' ? probeById.get('argocd-probe') : undefined);
+      const metadata: SourceMetadata = probe?.metadata ?? { source: link.id === 'argocd' && argocd ? 'argocd-api' : 'service-catalog', observedAt: new Date().toISOString(), freshness: 'NO_DATA', severity: link.id === 'argocd' && argoSeverity ? argoSeverity : 'INFO', message: 'No configured reachability probe.' };
+      return { id: link.id, name: link.label, group: link.group, description: probe ? 'Allowlisted reachability check' : 'Read-only service link', href: link.href, status: probe?.status ?? (metadata.severity === 'CRIT' ? 'DOWN' : 'DEGRADED'), latencyMs: probe?.latencyMs ?? null, metadata };
+    });
   }
 
   private recordHost(host: Host, timestamp: string) {
