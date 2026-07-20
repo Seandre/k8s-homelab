@@ -44,7 +44,7 @@ jobs:
           push: false
           tags: homepage:verify
           load: true
-      - uses: aquasecurity/trivy-action@0.33.1
+      - uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: homepage:verify
           severity: HIGH,CRITICAL
