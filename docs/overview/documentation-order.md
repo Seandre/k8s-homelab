@@ -8,8 +8,8 @@ Use the explicit VitePress sidebar and the numbered entries below as the navigat
 2. [Network Topology and UniFi Policy](network-topology.md) records the live VLANs, firewall zones, physical uplinks, remote access, and hardening backlog.
 3. [Learning Roadmap](learning-roadmap.md) tracks the broader project backlog.
 4. [Architecture Decisions](architecture-decisions.md) records durable design choices and rationale.
-5. [Homelab Homepage Architecture](homepage-architecture.md) defines the approved product, telemetry, security, deployment, and migration design for the custom btop-inspired homepage. **Approved; implementation has not started.**
-6. [Homelab Homepage Rework Build Plan](../build/homepage-rework.md) divides the implementation into bounded agent-sized tasks with prerequisites, start and end states, acceptance criteria, human approval gates, preview deployment, cutover, and rollback. **Ready for implementation.**
+5. [Homelab Homepage Architecture](homepage-architecture.md) defines the approved product, telemetry, security, deployment, and migration design for the custom btop-inspired homepage. **Implemented as an isolated preview; the owner-approved shortened Gate D technical soak passed and production is unchanged.**
+6. [Homelab Homepage Rework Build Plan](../build/homepage-rework.md) divides the implementation into bounded agent-sized tasks with prerequisites, start and end states, acceptance criteria, human approval gates, preview deployment, cutover, and rollback. **Preview Gate D technical closeout passed; production cutover remains a separate HP-029 approval.**
 
 ## Required Build Sequence
 
@@ -35,4 +35,5 @@ Do not activate the OKD private records before `bastion-01` is operational. Do n
 3. [Stable Admin Credentials](../operations/stable-admin-credentials.md) establishes durable Argo CD and Grafana passwords with macOS Keychain custody and stable Kubernetes Secrets.
 4. [Proxmox Public TLS](../operations/proxmox-public-tls.md) adds private `seandre.dev` aliases for `pve-01` and its VMs, then configures native Proxmox ACME DNS-01. **Complete.**
 5. [Proxmox Backup Server](../operations/proxmox-backup-server.md) builds `pbs-01` on `pve-01` and proves an isolated Nexus restore before Nexus becomes an OKD dependency. **Complete.**
-6. [Custom Homepage Preview and Rollback](../operations/homepage-rework.md) covers credential-safe preview deployment, verification, rotation, and rollback. **Preview manifests are ready; Gate D approval is required before deployment.**
+6. [Custom Homepage Preview and Rollback](../operations/homepage-rework.md) covers credential-safe preview deployment, verification, rotation, and rollback. **Preview is deployed; the owner-approved shortened PDU/observability Gate D technical soak passed.**
+7. [Homepage Observability Expansion](../operations/homepage-observability.md) records Prometheus, host-exporter, and strict-TLS local UniFi PDU operation. **PDU mapping is enabled at `c3d8968`; the shortened Gate D technical closeout passed without changing production.**

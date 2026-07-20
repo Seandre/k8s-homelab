@@ -15,7 +15,11 @@ The approved [Homelab Homepage Architecture](overview/homepage-architecture.md) 
 
 The preview’s live-source rollout, persistent Prometheus configuration, and
 host node_exporter prerequisite are documented in [Homepage Observability
-Expansion](operations/homepage-observability.md).
+Expansion](operations/homepage-observability.md). UniFi PDU Pro power is live
+in the isolated preview through the strict-TLS local UnPoller path at revision
+`c3d8968`; the owner-approved shortened Gate D soak passed technical closeout
+at `2026-07-20T21:37:34Z`. This remains an isolated preview, not a production
+cutover; stock Homepage remains the rollback target.
 
 ## Current Platform
 

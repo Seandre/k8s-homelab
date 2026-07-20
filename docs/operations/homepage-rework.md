@@ -1,20 +1,23 @@
 # Custom Homepage Preview and Rollback Runbook
 
 This runbook operates the custom Homepage preview without changing the stock
-`homepage` workload or `home.lab.seandre.dev`. The preview manifests are in
-`kubernetes/apps/homepage-custom-preview/`; they are deliberately absent from
-the Argo application resource list until Gate D is owner-approved.
+`homepage` workload or `home.lab.seandre.dev`. The preview manifests in
+`kubernetes/apps/homepage-custom-preview/` are deployed through Argo CD. The
+owner-approved shortened observability/PDU soak passed technical closeout on
+2026-07-20; production traffic remains unchanged.
 
 ## Current immutable preview artifact
 
-The approved preview image is:
+The current preview image is:
 
 ```text
-ghcr.io/seandre/k8s-homelab-homepage@sha256:7f287753c7fcfa9d857a06b9d5eab1f0e12735860f070f865d22bedc355f9391
+ghcr.io/seandre/k8s-homelab-homepage@sha256:d75558ed538c832d9f51259d022511619e44aac1af5d7c6c059d85ef97297dc5
 ```
 
-It was published by the successful Homepage image workflow for commit
-`aa75fd3`. The Deployment references this digest, never a mutable tag.
+It contains the validated PDU mapping enabled at Git revision `c3d8968`. The
+Deployment references this digest, never a mutable tag. Earlier digests in the
+dated verification records below are retained as historical evidence and are
+not the current artifact.
 
 The image was readable from GHCR without credentials at publication time. If
 the package becomes private, create a namespace-local `dockerconfigjson` pull
@@ -48,7 +51,9 @@ Secret and keep unrelated adapters isolated.
 
 ## Gate D deployment procedure
 
-Gate D requires explicit owner approval before this section is performed.
+Gate D requires explicit owner approval before this section is performed. The
+preview deployment was approved and completed; these steps remain the repeatable
+procedure, not an instruction to redeploy the already-running preview.
 
 1. Add `../../../apps/homepage-custom-preview` to
    `kubernetes/clusters/homelab/apps/kustomization.yaml`. Do not alter the
@@ -185,6 +190,41 @@ Opening checks passed at the start of the window:
 The replacement revision requires a fresh Gate C review and a fresh Gate D
 soak. See [Homepage Observability Expansion](homepage-observability.md) for
 the host-exporter prerequisite and exact boundary.
+
+## Gate D PDU telemetry verification — 2026-07-20
+
+The UniFi PDU Pro preflight passed and the mapping was enabled at Git revision
+`c3d8968`. The current preview image is pinned to
+`sha256:d75558ed538c832d9f51259d022511619e44aac1af5d7c6c059d85ef97297dc5`.
+UnPoller reaches the local controller over verified TLS with the manual
+API-key Secret; Prometheus retains only the outlet-power metric plus scrape
+health.
+
+Exactly one PDU was discovered, with exactly one series for each required
+`pve-01` and `pve-02` outlet label. Homepage bootstrap schema v2 exposes the
+PDU total and those two normalized host watt values without controller/device
+identifiers, PDU or outlet names, credentials, or raw metrics. Outlets labeled
+for OKD nodes contribute to the total PDU draw only and are not assigned to a
+host card.
+
+The one-hour replacement window was shortened by owner direction. The later
+Homepage replacement pod started at `2026-07-20T21:08:23Z`, and the owner-
+approved shortened soak closed at `2026-07-20T21:37:34Z` (approximately 29
+minutes). The final technical checks passed:
+
+| Check | Result |
+|---|---|
+| Argo CD `homelab` | `Synced` / `Healthy` at `c3d8968` |
+| Homepage preview | 2/2 Ready; both pods had zero restarts; pinned image digest matched the deployed manifest |
+| UnPoller | 1/1 Ready; zero restarts |
+| Prometheus target history | `min_over_time(up{service="unpoller"}[1h])` returned `1` |
+| Retention and mapping | One retained `unpoller_*` family; exact `pve-01` and `pve-02` series were continuously present |
+| Related alerts | No PDU/UnPoller-related firing alert |
+| Public bootstrap | Schema `2`, PDU freshness `CURRENT`, total and both PVE watt values non-null |
+| Public redaction | No PDU name, outlet label, controller endpoint, API-key, token, Secret, password, or credential marker; the existing generic `network.unifi.controller` status label is `UniFi Site Manager` and is not a PDU identifier |
+
+Gate D preview technical closeout is recorded. Production cutover remains
+prohibited until HP-029 receives its separate owner approval.
 
 ## Credential provisioning and rotation
 

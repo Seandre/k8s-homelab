@@ -1,6 +1,6 @@
 # Overview 04: Homelab Homepage Architecture
 
-> Status: approved architecture; implementation has not started. The existing Homepage deployment remains the production and rollback target until the acceptance gates in this document pass.
+> Status: implemented as an isolated k3s preview. Live read-only PDU telemetry is enabled at Git revision `c3d8968`; the owner-approved shortened Gate D technical soak passed at `2026-07-20T21:37:34Z`. The existing Homepage deployment remains production and the rollback target until a separately approved cutover.
 
 This document defines the product, application, telemetry, security, and deployment architecture for a custom homelab homepage inspired by the default [btop](https://github.com/aristocratos/btop) interface.
 
@@ -32,7 +32,8 @@ The interface must remain modern, simple, readable, and resistant to information
 - High-level k3s state and a placeholder-aware OKD view before OKD exists.
 - Read-only alert aggregation, service reachability, and latency.
 - Existing UniFi speed-test results without triggering new tests.
-- Optional USP-PDU-PRO power data if a supported read-only interface is verified.
+- Measured USP-PDU-PRO total power and exact `pve-01`/`pve-02` outlet power
+  through the verified local, read-only UnPoller path.
 - Portland `97209` weather, sunrise/sunset, U.S. AQI, PM2.5, and PM10.
 - Infrastructure and web search.
 - Responsive desktop, tablet, and mobile experiences.
@@ -154,6 +155,7 @@ Fastify backend / integration gateway
   └─ no persistent application database
           │
           ├─ Prometheus / Alertmanager
+          │    └─ local TLS-verified UnPoller PDU exporter
           ├─ k3s and future OKD APIs
           ├─ Argo CD API
           ├─ Proxmox and PBS APIs
@@ -180,11 +182,17 @@ The application remains stateless, so replicas and cluster copies require no dat
 | Grafana | Health API and link | Reachability; Grafana retains historical analysis |
 | PBS | Read-only PBS API | Reachability, datastore, backup freshness, and failures |
 | UniFi | Supported read-only API | Controller health, network metrics, and speed-test history |
-| USP-PDU-PRO | Supported read-only capability if verified | Total and labeled per-outlet measured wattage |
+| USP-PDU-PRO | Local UniFi API through hardened UnPoller, strict TLS, API-key Secret, and fixed Prometheus queries | Total measured wattage and exact `pve-01`/`pve-02` outlet wattage; other labeled outlets, including OKD nodes, contribute only to total |
 | Weather/AQI | Open-Meteo | Current Portland utility data |
 | Service state | Backend allowlisted probes | Server-side reachability |
 
 The browser never receives upstream credentials or contacts privileged infrastructure APIs directly. Glances is a migration bridge, not the target telemetry platform. No exporter is installed on a hypervisor or infrastructure host without an explicit least-privilege review.
+
+The PDU integration uses bootstrap schema v2. Its public contract contains only
+the PDU total, the two normalized PVE host watt values, freshness, and source
+state. Controller/device identifiers, the exporter device name, outlet labels,
+API credentials, and raw Prometheus data remain server-side. PDU failures are
+informational/no-data only and do not change PVE, Kubernetes, or global health.
 
 ## Reachability and State Semantics
 

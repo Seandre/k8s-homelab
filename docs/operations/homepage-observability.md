@@ -1,9 +1,11 @@
 # Homepage Observability Expansion
 
-Status: implemented in GitOps on 2026-07-20; host exporter installation and
-the UniFi PDU validation gate are operator-run prerequisites. This runbook
-expands the preview Homepage with read-only live telemetry and does not change
-production Homepage traffic.
+Status: implemented in the preview GitOps path on 2026-07-20. The UniFi PDU
+preflight passed and its mapping is enabled at Git revision `c3d8968`; the
+owner-approved shortened Gate D technical soak passed at
+`2026-07-20T21:37:34Z`. Production Homepage traffic has not changed. Host
+exporter installation remains an operator-run prerequisite for the separate
+host-exporter path.
 
 ## Implemented cluster components
 
@@ -100,7 +102,9 @@ access before continuing; it is not a standalone Viewer identity. Do not reuse
 the separate Homepage Site Manager token.
 
 Rename the two PDU outlets exactly `pve-01` and `pve-02`; capitalization and
-hyphenation are part of the telemetry contract.
+hyphenation are part of the telemetry contract. Additional outlets labeled for
+OKD nodes are included in the PDU total only. They are not mapped to Homepage
+hosts and do not change the exact `pve-01`/`pve-02` contract.
 
 Create `monitoring/unpoller-unifi-readonly` manually from a protected local
 file. It must contain one key named `up.conf`; this Secret is intentionally not
@@ -220,6 +224,28 @@ stale PDU value, or false alert. The browser response must contain only the PDU
 total and the two host watts; it must not contain the controller, PDU name,
 outlet labels, credentials, or raw Prometheus data.
 
+### Activation record — 2026-07-20
+
+The preflight discovered exactly one PDU and exactly one series for each
+required `pve-01` and `pve-02` outlet label. The reviewed mapping was enabled at
+Git revision `c3d8968` with the device name retained only in Git-owned runtime
+configuration. The preview Deployment uses immutable image digest
+`sha256:d75558ed538c832d9f51259d022511619e44aac1af5d7c6c059d85ef97297dc5`.
+
+The live path is local and read-only: UnPoller connects to `unifi.local` with
+strict certificate verification and the manually managed API-key Secret,
+Prometheus retains only `unpoller_device_outlet_outlet_power` plus scrape
+health, and Homepage runs three fixed aggregate queries. Bootstrap schema v2
+exposes only total watts, `pve-01`/`pve-02` host watts, freshness, and source
+state. It excludes the API key, controller and device identifiers, PDU name,
+outlet labels, and raw Prometheus data. OKD-labeled outlets contribute to the
+total PDU draw only.
+
+The replacement one-hour Gate D soak began at `2026-07-20T21:08:23Z`. The owner
+accepted a shortened window, which closed at `2026-07-20T21:37:34Z` after the
+technical target, freshness, restart, alert, and public-contract checks passed.
+This is preview Gate D technical closeout only; it is not production cutover.
+
 ## Homepage data boundary
 
 The preview backend polls on its existing five-second refresh loop and sends a
@@ -241,9 +267,11 @@ NetworkPolicy to their monitoring namespace pods on TCP 9090 and 9093. The
 custom ServiceAccount now adds only `get/list/watch` for `metrics.k8s.io`
 nodes and pods; it still has no Secret or mutation permission.
 
-Until the PDU preflight passes, PDU/power remains `NOT_SUPPORTED`. No command
-in this runbook enables outlet control, starts a speed test, changes an alert,
-or writes to an upstream API.
+The PDU preflight has passed for the preview mapping recorded above. A later
+label mismatch, missing required series, or TLS/API failure becomes `NO DATA`
+or `INFO` for this optional source and does not degrade host, Kubernetes, or
+global health. No command in this runbook enables outlet control, starts a
+speed test, changes an alert, or writes to an upstream API.
 
 ## Review gates and rollback
 
@@ -253,8 +281,10 @@ Before deploying this revision to preview, perform a new Gate C review of:
 2. each host-side node_exporter installation and its firewall evidence; and
 3. the expanded backend's normalized response, with no credential-shaped text.
 
-After the preview image is deployed, start a new Gate D soak. The prior soak
-does not carry forward because this revision changes data sources and egress.
+The preview image has been deployed and the replacement Gate D checks have been
+reviewed. The prior soak did not carry forward because this revision changed
+data sources and egress. The owner-approved shortened technical closeout is
+recorded above; production cutover remains a separate approval.
 
 Rollback is Git-only: set `pduPower.enabled` to `false` (or revert the PDU
 mapping, exporter, and preview Homepage commits), sync through Argo CD, and

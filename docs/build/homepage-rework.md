@@ -11,6 +11,14 @@ The current `gethomepage/homepage` deployment is production and is the rollback
 target. Do not replace it, rename it, or change its production ingress until the
 cutover task explicitly says to do so.
 
+Current status (2026-07-20): the custom application is deployed at its isolated
+preview hostname. The validated PDU mapping is enabled at Git revision
+`c3d8968` with image digest
+`sha256:d75558ed538c832d9f51259d022511619e44aac1af5d7c6c059d85ef97297dc5`.
+The owner-approved shortened replacement Gate D soak passed its technical
+closeout at `2026-07-20T21:37:34Z`; production remains unchanged and is still
+the rollback target.
+
 ## Source of Truth and Fixed Scope
 
 Before starting any task, read:
@@ -771,6 +779,13 @@ speed-test history.
 
 #### HP-023B: Resolve the optional PDU integration
 
+**Status:** Complete in preview on 2026-07-20 at `c3d8968`. The supported path
+uses hardened UnPoller against the local UniFi API with a manually managed API
+key, pinned certificate, and strict TLS. Prometheus retains only
+`unpoller_device_outlet_outlet_power` plus scrape health. Bootstrap schema v2
+returns total measured watts and exact `pve-01`/`pve-02` host watts without
+public labels or identifiers. OKD-labeled outlets contribute only to total.
+
 **Prerequisites:** HP-002, HP-016, HP-017.
 
 **Start:** PDU capability is either verified as supported/read-only or marked
@@ -996,7 +1011,9 @@ scope.
 - [x] Gate B1 — high-fidelity desktop/mobile mockups approved (2026-07-19).
 - [x] Gate B2 — responsive shell and interactions approved (2026-07-19).
 - [x] Gate C — integrations and least-privilege security approved (2026-07-20).
-- [ ] Gate D — preview deployment and soak approved.
+- [x] Gate D — preview deployment and owner-approved shortened soak passed
+  technical closeout at `2026-07-20T21:37:34Z`. Production traffic is unchanged;
+  HP-029 remains a separate approval.
 - [ ] All agreed links and daily utilities are present.
 - [ ] Live, stale, no-data, not-provisioned, and unsupported states are distinct.
 - [ ] Proxmox summaries match and btop-style graphs are responsive.
