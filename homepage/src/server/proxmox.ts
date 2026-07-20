@@ -90,7 +90,7 @@ export class ProxmoxAdapter {
       const memoryPercent = node.memory ? Math.round((node.memory.used / node.memory.total) * 100) : null;
       const metadata: SourceMetadata = {
         ...snapshot.metadata,
-        ...(node.status?.toLowerCase() !== 'online' ? { severity: 'CRIT' as const, message: 'Proxmox node is not online.' } : partial ? { message: 'Some approved Proxmox metrics are unavailable.' } : {}),
+        ...(node.status !== undefined && node.status.toLowerCase() !== 'online' ? { severity: 'CRIT' as const, message: 'Proxmox node is not online.' } : partial ? { message: 'Some approved Proxmox metrics are unavailable.' } : {}),
       };
       return {
         ...output,

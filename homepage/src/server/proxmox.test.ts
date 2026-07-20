@@ -35,6 +35,15 @@ describe('Proxmox read-only adapter', () => {
     expect(result).toMatchObject({ cpuPercent: 10, diskTotalBytes: null, runningVmCount: 0, metadata: { freshness: 'CURRENT', message: 'Some approved Proxmox metrics are unavailable.' } });
   });
 
+  it('does not infer an offline state when the optional node status is absent', async () => {
+    const fetcher: ProxmoxFetch = async (url) => {
+      if (url.endsWith('/status')) return { ok: true, json: async () => ({ data: { cpu: 0.1 } }) };
+      return { ok: true, json: async () => ({ data: [] }) };
+    };
+    const result = (await new ProxmoxAdapter([host], true, clock).read(fetcher))[0]!;
+    expect(result.metadata).toMatchObject({ freshness: 'CURRENT', severity: 'OK' });
+  });
+
   it('does not request Proxmox when the integration is disabled', async () => {
     const fetcher: ProxmoxFetch = async () => { throw new Error('must not be called'); };
     const result = (await new ProxmoxAdapter([host], false, clock).read(fetcher))[0]!;
