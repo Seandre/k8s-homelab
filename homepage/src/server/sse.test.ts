@@ -29,4 +29,13 @@ describe('bootstrap SSE broker', () => {
     expect(slow.ended).toBe(true);
     expect(broker.subscriberCount()).toBe(0);
   });
+
+  it('does not retain a connection that closes while replaying buffered events', () => {
+    const broker = new BootstrapEventBroker();
+    broker.publish(healthyBootstrapFixture);
+    const closedDuringReplay = connection(false);
+    broker.subscribe(closedDuringReplay.value);
+    expect(closedDuringReplay.ended).toBe(true);
+    expect(broker.subscriberCount()).toBe(0);
+  });
 });

@@ -27,10 +27,12 @@ export class BootstrapEventBroker {
   }
 
   subscribe(connection: SseConnection, afterId = 0): () => void {
-    for (const event of this.events.filter((candidate) => candidate.id > afterId)) this.writeEvent(connection, event);
-    this.subscribers.add(connection);
     const unsubscribe = () => this.subscribers.delete(connection);
     connection.onClose(unsubscribe);
+    this.subscribers.add(connection);
+    for (const event of this.events.filter((candidate) => candidate.id > afterId)) {
+      if (!this.writeEvent(connection, event)) break;
+    }
     return unsubscribe;
   }
 
@@ -49,11 +51,13 @@ export class BootstrapEventBroker {
     return this.subscribers.size;
   }
 
-  private writeEvent(connection: SseConnection, event: BootstrapEvent) {
-    const accepted = connection.write(`id: ${event.id}\nevent: bootstrap\ndata: ${JSON.stringify(event.data)}\n\n`);
+  private writeEvent(connection: SseConnection, event: BootstrapEvent): boolean {
+    let accepted = false;
+    try { accepted = connection.write(`id: ${event.id}\nevent: bootstrap\ndata: ${JSON.stringify(event.data)}\n\n`); } catch { accepted = false; }
     if (!accepted) {
       this.subscribers.delete(connection);
       connection.end();
     }
+    return accepted;
   }
 }

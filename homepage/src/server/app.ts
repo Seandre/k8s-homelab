@@ -89,12 +89,20 @@ export function buildApp(options: AppOptions): FastifyInstance {
     const requestedId = Number(request.headers['last-event-id'] ?? 0);
     const afterId = Number.isSafeInteger(requestedId) && requestedId >= 0 ? requestedId : 0;
     reply.hijack();
+    let closed = false;
+    reply.raw.once('close', () => { closed = true; });
+    // A disconnect can occur while the broker is replaying buffered events.
+    // Keep that normal race from becoming an unhandled process-level error.
+    reply.raw.on('error', () => { closed = true; });
     reply.raw.writeHead(200, { 'content-type': 'text/event-stream; charset=utf-8', 'cache-control': 'no-cache, no-transform', connection: 'keep-alive', 'x-accel-buffering': 'no' });
     reply.raw.flushHeaders();
     const connection: SseConnection = {
-      write: (chunk) => reply.raw.write(chunk),
-      end: () => { if (!reply.raw.writableEnded) reply.raw.end(); },
-      onClose: (handler) => reply.raw.once('close', handler),
+      write: (chunk) => {
+        if (closed || reply.raw.destroyed || reply.raw.writableEnded || reply.raw.writableFinished) return false;
+        try { return reply.raw.write(chunk); } catch { return false; }
+      },
+      end: () => { if (!closed && !reply.raw.writableEnded && !reply.raw.writableFinished) reply.raw.end(); },
+      onClose: (handler) => { reply.raw.once('close', handler); reply.raw.once('error', handler); },
     };
     const unsubscribe = eventBroker.subscribe(connection, afterId);
     const interval = setInterval(() => eventBroker.keepAlive(connection), keepAliveMs);
