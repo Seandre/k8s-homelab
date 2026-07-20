@@ -74,9 +74,9 @@ export const gitOwnedRuntimeConfig: RuntimeConfig = loadRuntimeConfig({
     { id: 'pbs-readonly', namespace: 'homepage', secretName: 'homepage-pbs-readonly', keys: ['server', 'token-id', 'token-secret', 'ca'] },
     { id: 'unifi-readonly', namespace: 'homepage', secretName: 'homepage-unifi-readonly', keys: ['server', 'token'] },
   ],
-  // Turn this on only after the Git-owned preflight in homepage-observability
-  // confirms this exact Prometheus `name` label and both outlet labels.
-  pduPower: { enabled: false, deviceName: 'USP-PDU-Pro' },
+  // Validated against Prometheus: one USP-PDU-Pro device and one series for
+  // each of the required pve-01 and pve-02 outlet labels.
+  pduPower: { enabled: true, deviceName: 'USP-PDU-Pro' },
   historyMetrics: ['pve-01', 'pve-02'].flatMap((host) => ['CPU', 'MEMORY', 'DISK', 'RX', 'TX'].map((metric) => ({ metric: `${host} ${metric}`, windows: ['15m'] as const }))),
   thresholds: { cpuWarnPercent: 70, cpuCritPercent: 90, backupWarnAgeSeconds: 86_400 },
   weatherLocation: { postalCode: '97209', latitude: 45.527412, longitude: -122.686270 },

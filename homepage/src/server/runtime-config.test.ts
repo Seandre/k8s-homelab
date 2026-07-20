@@ -20,7 +20,7 @@ describe('Git-owned runtime configuration', () => {
     const weather = gitOwnedRuntimeConfig.sources.find((source) => source.id === 'weather-source')!;
     expect(weather).toMatchObject({ enabled: true, stateWhenDisabled: 'NOT_SUPPORTED' });
     expect(gitOwnedRuntimeConfig.featureFlags.prometheus).toBe(true);
-    expect(gitOwnedRuntimeConfig.pduPower).toEqual({ enabled: false, deviceName: 'USP-PDU-Pro' });
+    expect(gitOwnedRuntimeConfig.pduPower).toEqual({ enabled: true, deviceName: 'USP-PDU-Pro' });
     expect(gitOwnedRuntimeConfig.probes.every((probe) => probe.target !== 'https://example.com')).toBe(true);
   });
 
