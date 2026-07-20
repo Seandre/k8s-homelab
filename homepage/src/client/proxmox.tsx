@@ -21,7 +21,7 @@ function ProxmoxDetail({ host }: { host: Host }) {
         <Metric label="GUESTS" value={`${host.runningVmCount ?? 'N/S'} VM / ${host.runningContainerCount ?? 'N/S'} CT`} detail={`stopped: ${host.stoppedVmCount ?? 'N/S'} VM / ${host.stoppedContainerCount ?? 'N/S'} CT`} />
       </div>
       <div className="proxmox-core-row"><span>PER-CORE</span>{host.cpuCorePercentages ? host.cpuCorePercentages.map((value, index) => <span key={index}>C{index} <b>{value}%</b></span>) : <span>NOT SUPPORTED</span>}</div>
-      <div className="proxmox-storage-row"><span>STORAGE</span><span><b>{bytesToTiB(host.diskUsedBytes)} TiB</b> used / {bytesToTiB(host.diskTotalBytes)} TiB</span><span>DISK I/O <b>{host.diskIoPercent ?? 'N/S'}%</b></span></div>
+      <div className="proxmox-storage-row"><span>STORAGE</span><span><b>{bytesToTiB(host.diskUsedBytes)} TiB</b> used / {bytesToTiB(host.diskTotalBytes)} TiB</span><span>I/O WAIT <b>{host.diskIoPercent ?? 'N/S'}%</b></span></div>
     </div>
   );
 }
@@ -42,7 +42,7 @@ export function ProxmoxPanel({ host, expanded, onExpand, timeSeries = [] }: { ho
       </div>
       <div className="pve-resource-grid">
         <section className="pve-resource memory-resource"><h3>MEMORY</h3><DotGraph label="USED" values={seriesValues(timeSeries, `${host.name} MEMORY`, memory)} unit="%" tone="memory" height={2} width={20} /><p><b>{bytesToGiB(host.memoryUsedBytes)} GiB</b> used / {bytesToGiB(host.memoryTotalBytes)} GiB</p><p>{host.memoryTotalBytes === null || host.memoryUsedBytes === null ? '—' : bytesToGiB(host.memoryTotalBytes - host.memoryUsedBytes)} GiB available</p></section>
-        <section className="pve-resource disk-resource"><h3>DISKS</h3><DotGraph label="VM DATA" values={seriesValues(timeSeries, `${host.name} DISK`, disk)} unit="%" tone="disk" height={2} width={20} /><p><b>{bytesToTiB(host.diskUsedBytes)} TiB</b> used / {bytesToTiB(host.diskTotalBytes)} TiB</p><p>IO <b>{host.diskIoPercent ?? '—'}%</b></p></section>
+        <section className="pve-resource disk-resource"><h3>DISKS</h3><DotGraph label="VM DATA" values={seriesValues(timeSeries, `${host.name} DISK`, disk)} unit="%" tone="disk" height={2} width={20} /><p><b>{bytesToTiB(host.diskUsedBytes)} TiB</b> used / {bytesToTiB(host.diskTotalBytes)} TiB</p><p>I/O WAIT <b>{host.diskIoPercent ?? '—'}%</b></p></section>
         <section className="pve-resource network-resource"><h3>NETWORK</h3><DotGraph label="DOWN" values={seriesValues(timeSeries, `${host.name} RX`, download)} unit="Mb/s" tone="download" height={1} width={20} /><DotGraph label="UP" values={seriesValues(timeSeries, `${host.name} TX`, upload)} unit="Mb/s" tone="upload" height={1} width={20} /><p>RX <b>{download ?? 'N/S'}{download === null ? '' : ' Mb/s'}</b> · TX <b>{upload ?? 'N/S'}{upload === null ? '' : ' Mb/s'}</b></p><p>Live Glances bridge</p></section>
       </div>
       {expanded ? <ProxmoxDetail host={host} /> : null}

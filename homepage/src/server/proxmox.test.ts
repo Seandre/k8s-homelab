@@ -11,7 +11,7 @@ describe('Proxmox read-only adapter', () => {
     const seen: Array<{ url: string; authorization: string }> = [];
     const fetcher: ProxmoxFetch = async (url, init) => {
       seen.push({ url, authorization: init.headers.authorization });
-      if (url.endsWith('/status')) return { ok: true, json: async () => ({ data: { cpu: 0.42, memory: { used: 58, total: 100 }, swap: { used: 3, total: 10 }, uptime: 600, status: 'online' } }) };
+      if (url.endsWith('/status')) return { ok: true, json: async () => ({ data: { cpu: 0.42, wait: 0.1234, memory: { used: 58, total: 100 }, swap: { used: 3, total: 10 }, uptime: 600, status: 'online' } }) };
       if (url.endsWith('/storage')) return { ok: true, json: async () => ({ data: [{ total: 1_000, used: 400 }] }) };
       return { ok: true, json: async () => ({ data: [{ type: 'node', node: 'pve01', status: 'online' }, { type: 'storage', storage: 'local' }, { type: 'qemu', node: 'pve01', status: 'running', name: 'never-exposed' }, { type: 'qemu', node: 'pve01', status: 'stopped' }, { type: 'lxc', node: 'pve01', status: 'running' }] }) };
     };
@@ -21,7 +21,7 @@ describe('Proxmox read-only adapter', () => {
       { url: 'https://pve-01.lab.seandre.dev:8006/api2/json/cluster/resources', authorization: 'PVEAPIToken=homepage@pve!dashboard=test-secret' },
       { url: 'https://pve-01.lab.seandre.dev:8006/api2/json/nodes/pve01/storage', authorization: 'PVEAPIToken=homepage@pve!dashboard=test-secret' },
     ]));
-    expect(result).toMatchObject({ cpuPercent: 42, memoryPercent: 58, diskUsedBytes: 400, runningVmCount: 1, stoppedVmCount: 1, runningContainerCount: 1, stoppedContainerCount: 0, metadata: { freshness: 'CURRENT', severity: 'OK' } });
+    expect(result).toMatchObject({ cpuPercent: 42, diskIoPercent: 12.3, memoryPercent: 58, diskUsedBytes: 400, runningVmCount: 1, stoppedVmCount: 1, runningContainerCount: 1, stoppedContainerCount: 0, metadata: { freshness: 'CURRENT', severity: 'OK' } });
     expect(result).not.toHaveProperty('nameFromUpstream');
     expect(JSON.stringify(result)).not.toContain('never-exposed');
   });

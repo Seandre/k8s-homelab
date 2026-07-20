@@ -4,6 +4,8 @@ import { SourceNormalizer, withTimeout, type Clock } from './normalization.js';
 
 const NodeResponseSchema = z.object({ data: z.object({
   cpu: z.number().nonnegative().optional(),
+  // Proxmox reports host I/O wait as a 0–1 fraction of CPU time.
+  wait: z.number().nonnegative().optional(),
   cpuinfo: z.object({ model: z.string().min(1).optional(), mhz: z.union([z.string(), z.number()]).optional(), cpus: z.number().int().positive().optional() }).optional(),
   loadavg: z.array(z.union([z.string(), z.number()])).length(3).optional(),
   memory: z.object({ used: z.number().nonnegative(), total: z.number().positive() }).optional(),
@@ -99,6 +101,7 @@ export class ProxmoxAdapter {
       return {
         ...output,
         cpuPercent: node.cpu === undefined ? null : Math.round(Math.min(1, node.cpu) * 100),
+        diskIoPercent: node.wait === undefined ? null : Math.round(Math.min(1, node.wait) * 1_000) / 10,
         memoryPercent,
         memoryUsedBytes: node.memory?.used ?? null,
         memoryTotalBytes: node.memory?.total ?? null,
