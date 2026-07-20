@@ -1,9 +1,9 @@
 # Custom Homepage k3s Read-only RBAC
 
-`kubernetes/apps/homepage/custom-k3s-readonly-rbac.yaml` is a prepared but
-non-deployed manifest for the future custom Homepage Deployment. It does not
-modify the stock Homepage ServiceAccount, Deployment, or current production
-Kustomization.
+`kubernetes/apps/homepage/custom-k3s-readonly-rbac.yaml` is rendered through
+the Homepage kustomization and bound only to the custom Homepage ServiceAccount.
+It does not modify the stock Homepage ServiceAccount, Deployment, or current
+production Service/Ingress ownership.
 
 The identity can only `get`, `list`, and `watch`:
 

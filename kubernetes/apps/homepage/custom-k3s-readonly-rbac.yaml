@@ -1,5 +1,5 @@
-# Prepared for the custom homepage Deployment only. This file is deliberately
-# not referenced by the existing stock Homepage kustomization or Deployment.
+# Scoped to the custom Homepage ServiceAccount only. It is rendered alongside
+# the stock Homepage resources but is not used by the stock Deployment.
 apiVersion: v1
 kind: ServiceAccount
 metadata:

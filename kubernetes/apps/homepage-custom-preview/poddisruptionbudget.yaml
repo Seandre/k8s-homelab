@@ -1,0 +1,14 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: homepage-custom-preview
+  namespace: homepage
+  labels:
+    app.kubernetes.io/name: homepage-custom
+    app.kubernetes.io/instance: preview
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: homepage-custom
+      app.kubernetes.io/instance: preview

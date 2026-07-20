@@ -1,0 +1,30 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: homepage-custom-preview
+  namespace: homepage
+  labels:
+    app.kubernetes.io/name: homepage-custom
+    app.kubernetes.io/instance: preview
+    app.kubernetes.io/component: dashboard
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-production
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - homepage-preview.lab.seandre.dev
+      secretName: homepage-custom-preview-tls
+  rules:
+    - host: homepage-preview.lab.seandre.dev
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: homepage-custom-preview
+                port:
+                  number: 3000

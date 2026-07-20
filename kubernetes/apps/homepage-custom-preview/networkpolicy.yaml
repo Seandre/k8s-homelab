@@ -1,0 +1,70 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: homepage-custom-preview
+  namespace: homepage
+  labels:
+    app.kubernetes.io/name: homepage-custom
+    app.kubernetes.io/instance: preview
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: homepage-custom
+      app.kubernetes.io/instance: preview
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: traefik
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: traefik
+      ports:
+        - protocol: TCP
+          port: 3000
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    - to:
+        - ipBlock:
+            cidr: 10.43.0.1/32
+      ports:
+        - protocol: TCP
+          port: 443
+    - to:
+        - ipBlock:
+            cidr: 192.168.40.0/24
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 8006
+        - protocol: TCP
+          port: 8007
+        - protocol: TCP
+          port: 61208
+    # Standard NetworkPolicy cannot constrain external HTTPS by DNS name. The
+    # backend's Git-owned hostname allowlist remains the application boundary.
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.0.0.0/8
+              - 172.16.0.0/12
+              - 192.168.0.0/16
+      ports:
+        - protocol: TCP
+          port: 443
