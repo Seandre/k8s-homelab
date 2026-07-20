@@ -964,6 +964,10 @@ intact.
 
 #### HP-030: Execute and document the rollback drill
 
+**Status:** Completed 2026-07-20 in Git revisions `0e2826d` (rollback) and
+`9335b5b` (forward recovery); measured evidence is recorded in the [Homepage
+rework runbook](../operations/homepage-rework.md#hp-030-git-only-rollback-drill--2026-07-20).
+
 **Prerequisites:** HP-029.
 
 **Start:** Production uses the custom app and the preserved stock target is

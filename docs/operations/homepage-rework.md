@@ -266,6 +266,47 @@ the cutover introduced no application source change. Treat visual baseline
 review as follow-up evidence rather than regenerating snapshots during the
 production window.
 
+## HP-030 Git-only rollback drill — 2026-07-20
+
+The rollback drill used only Git commits and Argo CD reconciliation. The
+unrelated GitHub Actions docs-image commit `3c4e50f` arrived while the rollback
+was being prepared; the rollback commit was rebased onto it without changing
+the docs deployment or overwriting remote work.
+
+| Direction | Git revision | Argo CD deployment | Result |
+|---|---|---|---|
+| Custom → stock | `0e2826d6413cebd236fb65337cc5b21ba66a75a9` (`Revert "Cut over homepage production traffic"`) | started `2026-07-20T22:06:06Z`, deployed `2026-07-20T22:06:07Z` | `homelab-apps` and `homelab` `Synced` / `Healthy` |
+| Stock → custom | `9335b5b6bdd6ba2fdecaa48f125f107097d1e48f` (`Reapply "Cut over homepage production traffic"`) | started `2026-07-20T22:09:08Z`, deployed `2026-07-20T22:09:09Z` | `homelab-apps` `Synced` / `Healthy`; parent `homelab` `Synced` / `Healthy` |
+
+Measured Git-to-serving recovery was approximately 40 seconds for rollback
+(`22:05:27Z` commit to `22:06:07Z` deployment) and 53 seconds for forward
+recovery (`22:08:16Z` commit to `22:09:09Z` deployment). No ConfigMap or image
+rebuild was used.
+
+| Check | Stock rollback | Custom forward recovery |
+|---|---|---|
+| Selector ownership | `homepage` Service had only `10.42.0.53:3000`; `homepage-custom-production` was absent | `homepage` Service still had only the stock endpoint; `homepage-custom-production` had only `10.42.0.102:3000` and `10.42.1.54:3000` |
+| HTTPS/TLS | `/` 200, strict TLS `ssl_verify_result=0`; `homepage-public-tls` Ready | `/` 200, strict TLS `ssl_verify_result=0`; `homepage-public-tls` Ready |
+| Health/API/SSE | Stock `/api/healthcheck` 200. Custom-only `/api/health/live`, `/api/health/ready`, `/api/v1/bootstrap`, and `/api/v1/events` returned the expected 404 because the preserved stock image does not implement the custom API | `/api/health/live`, `/api/health/ready`, `/api/v1/bootstrap`, and `/api/v1/events` all 200; SSE content type `text/event-stream; charset=utf-8` |
+| Routes/browser contract | `/` rendered HTML; custom route paths correctly remained unavailable on stock | `/`, `/compute`, `/network`, `/storage-backups`, `/kubernetes`, `/okd`, `/services`, and `/weather` all 200; HTML and normalized API redaction checks passed |
+| Published links | All ten configured links reachable over strict TLS: 200/302 as expected, Nexus 403 as expected | Same ten links and statuses after recovery |
+| Runtime | Stock pod Ready with 0 restarts | Custom 2/2 Ready with 0 restarts; log scan found 0 error and 0 credential markers; resource check 53m/37Mi and 86m/40Mi |
+| Adapter/monitoring | Preserved stock path did not change adapter resources | UnPoller 1/1 Ready with 0 restarts; target up; one retained UnPoller family; two required PVE outlet series; zero related firing alerts |
+
+The restored custom bootstrap reported schema version `2`, PDU freshness
+`CURRENT`, non-null total watts and non-null `pve-01`/`pve-02` host watts. The
+browser-control runtime was unavailable in this execution environment (no
+browser was discoverable), so the interactive browser smoke was not run; the
+HTTPS HTML/API contract and all route/link checks passed instead. No selector
+overlap, TLS weakening, Prometheus retention change, raw exporter exposure,
+outlet-control access, or Secret/API-key change was introduced.
+
+Corrections discovered during the drill: rebase the rollback onto an unrelated
+remote docs-image commit before pushing; use absolute system paths for curl in
+the elevated shell; and trigger the approved Argo CD hard-refresh annotation
+when the forward commit was not observed by the normal poll interval. None of
+these changed application resources outside the reviewed Git commits.
+
 ## Credential provisioning and rotation
 
 The integration credential names and expected keys are defined in
