@@ -36,7 +36,9 @@ jobs:
           cache-dependency-path: homepage/package-lock.json
       - run: npm ci
       - run: npx playwright install --with-deps chromium
-      - run: npm run lint && npm run typecheck && npm test -- --run && npm run test:integration && npm run test:e2e && npm run build
+      # Visual baselines are rendered and reviewed on macOS; retain portable
+      # keyboard/navigation/accessibility browser coverage on Ubuntu runners.
+      - run: npm run lint && npm run typecheck && npm test -- --run && npm run test:integration && npm run test:e2e -- --grep-invert 'matches the .* overview' && npm run build
       - uses: docker/setup-buildx-action@v3
       - uses: docker/build-push-action@v6
         with:
