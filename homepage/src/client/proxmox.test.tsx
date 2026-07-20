@@ -7,7 +7,7 @@ import { ProxmoxPanel } from './proxmox.js';
 describe('Proxmox drill-down', () => {
   it('renders the full approved host-detail metric set', () => {
     const host = healthyBootstrapFixture.hosts.find((candidate) => candidate.id === 'pve-01')!;
-    const markup = renderToStaticMarkup(<ProxmoxPanel host={host} index={0} expanded onExpand={() => undefined} />);
+    const markup = renderToStaticMarkup(<ProxmoxPanel host={host} expanded onExpand={() => undefined} />);
     expect(markup).toContain('PER-CORE');
     expect(markup).toContain('CPU CLOCK');
     expect(markup).toContain('LOAD AVG');
@@ -19,7 +19,7 @@ describe('Proxmox drill-down', () => {
 
   it('labels a partial supported metric as not supported instead of inventing a value', () => {
     const host = healthyBootstrapFixture.hosts.find((candidate) => candidate.id === 'pve-02')!;
-    const markup = renderToStaticMarkup(<ProxmoxPanel host={host} index={1} expanded onExpand={() => undefined} />);
+    const markup = renderToStaticMarkup(<ProxmoxPanel host={host} expanded onExpand={() => undefined} />);
     expect(markup).toContain('NOT SUPPORTED');
     expect(markup).toContain('STALE');
   });

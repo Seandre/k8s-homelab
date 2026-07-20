@@ -113,6 +113,43 @@ Gate D requires explicit owner approval before this section is performed.
 Record the soak duration, results, and any adapter status in Gate D evidence.
 Do not change production traffic until the owner explicitly approves HP-029.
 
+## Gate D initial verification — 2026-07-20
+
+The initial preview deployment was approved and reconciled at Git revision
+`fe137fe65bd575046d03d347f03a069d23606635`. Argo CD reported
+`Synced/Healthy`, and the stock `homepage` Deployment, Service, and
+`home.lab.seandre.dev` Ingress were not changed.
+
+| Check | Result |
+|---|---|
+| Preview resources | Deployment, Service, Ingress, PDB, and NetworkPolicy present under the distinct `homepage-custom-preview` name |
+| Availability and spread | 2/2 ready, zero-restart pods: one on `k8s-worker-01`, one on `k8s-worker-02` |
+| Image and runtime hardening | Pinned `sha256:7f287753…f9391`, custom read-only ServiceAccount, read-only root filesystem |
+| TLS and hostname | Let’s Encrypt certificate `Ready=True`; subject `homepage-preview.lab.seandre.dev`; UDM split-DNS resolves through `ingress.lab.seandre.dev` to `192.168.40.30` |
+| Application smoke test | HTTPS `/`, `/api/health/live`, `/api/health/ready`, and normalized `/api/v1/bootstrap` returned successfully |
+| SSE | `/api/v1/events` returned HTTP 200 with `text/event-stream`; idle timeout is expected while no event is emitted |
+| Least privilege and redaction | Custom ServiceAccount can get nodes but cannot list Secrets; browser response contained no credential-shaped markers |
+| Resource use | Each pod was 1m CPU and 24–25Mi memory at the initial check |
+
+The owner must specify the soak duration and complete the interactive
+view/layout/link review before Gate D is recorded as complete. Production
+cutover remains prohibited until a separate HP-029 approval.
+
+### Preview live Proxmox telemetry
+
+The preview Deployment enables `LIVE_TELEMETRY=true`. At a five-second
+interval, it reads the mounted Proxmox read-only credentials for current node
+identity, CPU model, clock, load, memory, storage, uptime, and guest counts,
+then combines those values with approved Glances CPU, temperature, and network
+samples. The browser receives only normalized values; no upstream credential
+is included in the API contract or event stream.
+
+Each CPU, memory, disk, RX, and TX graph keeps the most recent 104 genuine
+samples in memory. Until a metric has a sample, its braille graph is blank and
+labelled `N/S`; it is never populated with fixture or interpolated history.
+The normalizers retain a last successful source sample long enough to represent
+stale data accurately. Restarting a pod resets this short in-memory window.
+
 ## Credential provisioning and rotation
 
 The integration credential names and expected keys are defined in

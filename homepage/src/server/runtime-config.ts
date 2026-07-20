@@ -72,8 +72,8 @@ export const gitOwnedRuntimeConfig: RuntimeConfig = loadRuntimeConfig({
     { id: 'pbs-readonly', namespace: 'homepage', secretName: 'homepage-pbs-readonly', keys: ['server', 'token-id', 'token-secret', 'ca'] },
     { id: 'unifi-readonly', namespace: 'homepage', secretName: 'homepage-unifi-readonly', keys: ['server', 'token'] },
   ],
-  historyMetrics: [{ metric: 'pve-01 CPU', windows: ['15m'] }],
+  historyMetrics: ['pve-01', 'pve-02'].flatMap((host) => ['CPU', 'MEMORY', 'DISK', 'RX', 'TX'].map((metric) => ({ metric: `${host} ${metric}`, windows: ['15m'] as const }))),
   thresholds: { cpuWarnPercent: 70, cpuCritPercent: 90, backupWarnAgeSeconds: 86_400 },
   weatherLocation: { postalCode: '97209', latitude: 45.527412, longitude: -122.686270 },
-  featureFlags: { fixtures: true, weather: false, probes: false, prometheus: false, argocd: false, proxmox: false, pbs: false, unifi: false },
+  featureFlags: { fixtures: false, weather: false, probes: false, prometheus: false, argocd: false, proxmox: true, pbs: false, unifi: false },
 });

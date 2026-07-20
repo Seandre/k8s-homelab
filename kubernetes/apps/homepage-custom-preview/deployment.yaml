@@ -53,6 +53,8 @@ spec:
           env:
             - name: HOMEPAGE_RUNTIME_MODE
               value: preview
+            - name: LIVE_TELEMETRY
+              value: "true"
           resources:
             requests:
               cpu: 100m

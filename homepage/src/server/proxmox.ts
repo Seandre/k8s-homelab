@@ -4,8 +4,11 @@ import { SourceNormalizer, withTimeout, type Clock } from './normalization.js';
 
 const NodeResponseSchema = z.object({ data: z.object({
   cpu: z.number().nonnegative().optional(),
+  cpuinfo: z.object({ model: z.string().min(1).optional(), mhz: z.union([z.string(), z.number()]).optional(), cpus: z.number().int().positive().optional() }).optional(),
+  loadavg: z.array(z.union([z.string(), z.number()])).length(3).optional(),
   memory: z.object({ used: z.number().nonnegative(), total: z.number().positive() }).optional(),
   swap: z.object({ used: z.number().nonnegative(), total: z.number().positive() }).optional(),
+  rootfs: z.object({ used: z.number().nonnegative(), total: z.number().positive() }).optional(),
   uptime: z.number().int().nonnegative().optional(),
   status: z.string().optional(),
 }) });
@@ -95,8 +98,11 @@ export class ProxmoxAdapter {
         memoryPercent,
         memoryUsedBytes: node.memory?.used ?? null,
         memoryTotalBytes: node.memory?.total ?? null,
-        diskUsedBytes: storage.reduce((total, entry) => total + (entry.used ?? 0), 0) || null,
-        diskTotalBytes: storage.reduce((total, entry) => total + (entry.total ?? 0), 0) || null,
+        diskUsedBytes: (storage.reduce((total, entry) => total + (entry.used ?? 0), 0) || node.rootfs?.used) ?? null,
+        diskTotalBytes: (storage.reduce((total, entry) => total + (entry.total ?? 0), 0) || node.rootfs?.total) ?? null,
+        cpuModel: node.cpuinfo?.model ? `${node.cpuinfo.model}${node.cpuinfo.cpus ? ` · ${node.cpuinfo.cpus}T` : ''}` : null,
+        cpuClockMhz: node.cpuinfo?.mhz === undefined ? null : Number(node.cpuinfo.mhz),
+        loadAverage: node.loadavg?.map(Number) as Host['loadAverage'] ?? null,
         swapUsedBytes: node.swap?.used ?? null,
         swapTotalBytes: node.swap?.total ?? null,
         uptimeSeconds: node.uptime ?? null,
