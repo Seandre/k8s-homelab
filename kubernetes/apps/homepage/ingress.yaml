@@ -23,6 +23,6 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: homepage-custom-production
+                name: homepage
                 port:
                   number: 3000

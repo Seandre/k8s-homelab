@@ -52,7 +52,7 @@ spec:
               protocol: TCP
           env:
             - name: HOMEPAGE_RUNTIME_MODE
-              value: production
+              value: preview
             - name: LIVE_TELEMETRY
               value: "true"
           resources:

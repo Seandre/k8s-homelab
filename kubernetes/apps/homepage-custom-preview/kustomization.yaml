@@ -4,7 +4,6 @@ resources:
   - configmap.yaml
   - deployment.yaml
   - service.yaml
-  - production-service.yaml
   - ingress.yaml
   - networkpolicy.yaml
   - poddisruptionbudget.yaml
