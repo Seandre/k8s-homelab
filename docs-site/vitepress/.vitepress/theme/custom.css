@@ -254,9 +254,17 @@ body {
   }
 
   .Layout .VPNavBar.has-sidebar .content,
-  .Layout .VPLocalNav.has-sidebar,
-  .Layout .VPContent.has-sidebar {
+  .Layout .VPLocalNav.has-sidebar {
     padding-left: var(--vp-sidebar-width);
+  }
+
+  .Layout .VPContent.has-sidebar {
+    --docs-layout-gutter: max(
+      0px,
+      calc((100vw - var(--vp-layout-max-width)) / 2)
+    );
+    padding-right: var(--docs-layout-gutter);
+    padding-left: calc(var(--vp-sidebar-width) + var(--docs-layout-gutter));
   }
 
   .Layout .VPNavBar.has-sidebar .content {
@@ -379,14 +387,23 @@ body {
 }
 
 @media (min-width: 1280px) {
+  .Layout .VPDoc.has-sidebar > .container > .content {
+    flex: 1 1 auto;
+    width: calc(100% - var(--docs-toc-width));
+    min-width: 0;
+    margin: 0;
+  }
+
   .VPDoc .aside {
+    flex: 0 0 var(--docs-toc-width);
+    width: var(--docs-toc-width);
     max-width: var(--docs-toc-width);
     padding-left: 0;
   }
 
   .VPDoc .aside-container,
   .VPDoc .aside-curtain {
-    right: 0;
+    right: var(--docs-layout-gutter, 0px);
     width: var(--docs-toc-width);
   }
 
