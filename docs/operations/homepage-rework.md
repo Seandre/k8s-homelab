@@ -150,6 +150,21 @@ labelled `N/S`; it is never populated with fixture or interpolated history.
 The normalizers retain a last successful source sample long enough to represent
 stale data accurately. Restarting a pod resets this short in-memory window.
 
+## Gate D live telemetry verification — 2026-07-20
+
+The preview was reconciled at Git revision `18f3888655d6fbb0fe3100735a5e99a6d817fbba`
+to the pinned image digest `sha256:8181ffc4da0b4a76402248d8d9f12f804c8d9be388f84ae0be7855ddb2bcfb33`.
+Both preview pods became Ready on separate worker nodes. The public normalized
+bootstrap contract then showed `CURRENT` samples for `pve-01` and `pve-02`:
+
+- CPU identity, clock, load, memory, disk, and guest data came from the
+  read-only Proxmox APIs. Both hosts reported their actual
+  `Intel(R) Core(TM) i5-10500T CPU @ 2.30GHz · 12T` identity.
+- CPU, memory, disk, RX, and TX each had 12 real five-second samples for both
+  hosts. RX/TX came from Glances v4 `bytes_*_rate_per_sec` interface metrics.
+- No fixture values were used for these Proxmox cards. The public response
+  contained normalized metrics only; credentials were not read or logged.
+
 ## Credential provisioning and rotation
 
 The integration credential names and expected keys are defined in
