@@ -37,7 +37,7 @@ the rollback target.
 
 ## Current working tree
 
-Eight documentation files have intentional, uncommitted edits:
+The closeout changes are committed and pushed in `84c614e`:
 
 - `docs/build/homepage-rework.md`
 - `docs/index.md`
@@ -48,12 +48,10 @@ Eight documentation files have intentional, uncommitted edits:
 - `docs/overview/homepage-data-sources.md`
 - `docs/overview/homepage-gate-c-evidence.md`
 
-Those edits update stale planned/staged language, record the enabled PDU
+Those nine files update stale planned/staged language, record the enabled PDU
 mapping, preserve dated historical evidence, and record the owner-approved
 shortened Gate D technical closeout. They passed the VitePress build and
-`git diff --check`. Preserve these changes; do not discard or overwrite them.
-
-This handoff file is a ninth intentional uncommitted file.
+`git diff --check`; the repository was clean after publication.
 
 ## Soak status — technical closeout passed
 
@@ -112,7 +110,7 @@ If any soak check fails, leave Gate D unchecked, document the exact failed
 condition, and do not weaken TLS, retention, mapping, redaction, or network
 policy controls.
 
-## Final validation and publication
+## Final validation and publication — complete
 
 Run:
 
@@ -122,11 +120,11 @@ cd docs-site/vitepress
 npm run build
 ```
 
-Then review `git status --short` and the complete diff. Commit only the intended
-documentation/status changes, fetch/rebase safely if `origin/main` advanced,
-push to `main`, refresh Argo CD if the documentation deployment requires it,
-and verify the repository is clean. Do not commit secrets, local API-key files,
-port-forward output, or raw exporter data.
+The complete diff was reviewed, `origin/main` was unchanged before publication,
+and commit `84c614e` was pushed to `main`. The documentation workflow owns the
+image pin/update and Argo CD will reconcile that deployment. The repository is
+clean. No secrets, local API-key files, port-forward output, or raw exporter
+data were committed.
 
 ## Rollback boundary
 
