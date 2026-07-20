@@ -38,7 +38,7 @@ export class AlertmanagerAdapter {
     const snapshot = this.normalizer.snapshot();
     if (!snapshot.value) return [];
     return snapshot.value
-      .filter((alert) => alert.status.state.toLowerCase() === 'active' && alert.labels.alertname !== 'Watchdog')
+      .filter((alert) => alert.status.state.toLowerCase() === 'active' && !['Watchdog', 'InfoInhibitor'].includes(alert.labels.alertname ?? ''))
       .map((alert) => {
         const alertSeverity = severity(alert.labels);
         const metadata: SourceMetadata = { ...snapshot.metadata, severity: alertSeverity };
