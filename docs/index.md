@@ -11,15 +11,14 @@ This site is the readable view of the Markdown documentation stored in the homel
 
 Read the [complete documentation order](overview/documentation-order.md) for optional projects and operations references. The [infrastructure reference](overview/infrastructure-reference.md) is the canonical source for hardware, addresses, storage, and DNS; the [network topology](overview/network-topology.md) records the live UniFi VLANs, zones, uplinks, and policy boundaries.
 
-The approved [Homelab Homepage Architecture](overview/homepage-architecture.md) defines the planned btop-inspired replacement for the current Homepage application, including its views, telemetry sources, security boundary, k3s rollout, OKD migration, and rollback gates. Follow the [Homepage Rework Build Plan](build/homepage-rework.md) to implement it as bounded, acceptance-tested tasks while preserving the existing deployment as the rollback target.
+The approved [Homelab Homepage Architecture](overview/homepage-architecture.md) defines the btop-inspired private Homepage, including its views, telemetry sources, security boundary, k3s rollout, deferred OKD migration, and rollback gates. The custom app now serves production; the [Homepage Rework Build Plan](build/homepage-rework.md), [operations runbook](operations/homepage-rework.md), and [v1 evidence index](overview/homepage-v1-evidence.md) record implementation, operation, and closeout status.
 
-The preview’s live-source rollout, persistent Prometheus configuration, and
-host node_exporter prerequisite are documented in [Homepage Observability
+The live-source rollout, persistent Prometheus configuration, and host
+node_exporter prerequisite are documented in [Homepage Observability
 Expansion](operations/homepage-observability.md). UniFi PDU Pro power is live
-in the isolated preview through the strict-TLS local UnPoller path at revision
-`c3d8968`; the owner-approved shortened Gate D soak passed technical closeout
-at `2026-07-20T21:37:34Z`. This remains an isolated preview, not a production
-cutover; stock Homepage remains the rollback target.
+through the strict-TLS local UnPoller path at revision `c3d8968`; the
+owner-approved shortened Gate D soak passed technical closeout at
+`2026-07-20T21:37:34Z`. Stock Homepage remains the Git-only rollback target.
 
 ## Current Platform
 

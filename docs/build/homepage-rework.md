@@ -989,6 +989,11 @@ verify again. Record timings, exact revisions, observations, and corrections.
 
 #### HP-031: Close v1 and update repository documentation
 
+**Status:** Documentation closeout completed 2026-07-20. The [v1 evidence
+index](../overview/homepage-v1-evidence.md) maps every architecture criterion
+to repository or operational evidence. The visual snapshot baseline review is
+explicitly recorded as follow-up; it is not marked as passed.
+
 **Prerequisites:** HP-030.
 
 **Start:** Custom production and rollback have passed, but repository status still
@@ -1015,21 +1020,21 @@ scope.
 
 ## Final v1 Evidence Checklist
 
-- [ ] Gate A — baseline and data-source map approved.
-- [x] Gate B1 — high-fidelity desktop/mobile mockups approved (2026-07-19).
-- [x] Gate B2 — responsive shell and interactions approved (2026-07-19).
-- [x] Gate C — integrations and least-privilege security approved (2026-07-20).
+- [x] Gate A — baseline and data-source map approved ([baseline](../overview/homepage-implementation-baseline.md), [data-source map](../overview/homepage-data-sources.md)).
+- [x] Gate B1 — high-fidelity desktop/mobile mockups approved (2026-07-19; [UI approval](../overview/homepage-ui-approval.md)).
+- [x] Gate B2 — responsive shell and interactions approved (2026-07-19; [UI approval](../overview/homepage-ui-approval.md#gate-b2-review-checklist)).
+- [x] Gate C — integrations and least-privilege security approved (2026-07-20; [Gate C evidence](../overview/homepage-gate-c-evidence.md)).
 - [x] Gate D — preview deployment and owner-approved shortened soak passed
-  technical closeout at `2026-07-20T21:37:34Z`. Production traffic is unchanged;
-  HP-029 remains a separate approval.
-- [ ] All agreed links and daily utilities are present.
-- [ ] Live, stale, no-data, not-provisioned, and unsupported states are distinct.
-- [ ] Proxmox summaries match and btop-style graphs are responsive.
-- [ ] No integration supports writes or exposes credentials.
-- [ ] Accessibility and responsive browser suites pass.
-- [ ] Private image is scanned, has SBOM/provenance, and deploys by digest.
-- [ ] Production cutover passes.
-- [ ] Stock Homepage rollback and forward recovery drills pass.
+  technical closeout at `2026-07-20T21:37:34Z`; [Gate D and production runbook](../operations/homepage-rework.md).
+  HP-029 production cutover and HP-030 rollback/forward recovery are complete.
+- [x] All agreed links and daily utilities are present ([production and rollback checks](../operations/homepage-rework.md#hp-030-git-only-rollback-drill--2026-07-20)).
+- [x] Live, stale, no-data, not-provisioned, and unsupported states are distinct ([normalization tests](../../homepage/src/server/normalization.test.ts)).
+- [ ] Proxmox summaries match and btop-style graphs are responsive. Proxmox matching is evidenced; visual snapshot baseline review remains open ([v1 evidence](../overview/homepage-v1-evidence.md#graphs)).
+- [x] No integration supports writes or exposes credentials ([Gate C evidence](../overview/homepage-gate-c-evidence.md), [HP-030 redaction checks](../operations/homepage-rework.md#hp-030-git-only-rollback-drill--2026-07-20)).
+- [ ] Accessibility and responsive browser suites pass. Keyboard, layout, and serious/critical accessibility checks passed; six visual snapshots need baseline review ([E2E coverage](../../homepage/tests/e2e/dashboard.spec.ts)).
+- [x] Private image is scanned, has SBOM/provenance, and deploys by digest ([workflow](../../.github/workflows/homepage-image.yaml), [deployment](../../kubernetes/apps/homepage-custom-preview/deployment.yaml)).
+- [x] Production cutover passes ([HP-029](../operations/homepage-rework.md#hp-029-production-cutover--2026-07-20)).
+- [x] Stock Homepage rollback and forward recovery drills pass ([HP-030](../operations/homepage-rework.md#hp-030-git-only-rollback-drill--2026-07-20)).
 
 ## Explicitly Deferred Work
 

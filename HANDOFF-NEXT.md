@@ -1,6 +1,6 @@
 # Homepage Next-Agent Handoff
 
-Last updated: 2026-07-20T22:14:36Z
+Last updated: 2026-07-20T22:23:00Z
 
 ## Current state
 
@@ -37,16 +37,23 @@ Last updated: 2026-07-20T22:14:36Z
 - Documentation image workflow deployed
   `ghcr.io/seandre/k8s-homelab-docs:sha-69ec88b` through the Git-managed docs
   Deployment. `npm run build` and `git diff --check` passed.
+- HP-031 documentation closeout is complete in the working tree. README, the
+  architecture and documentation order, the operations runbook, the decision
+  log, the historical implementation baseline, and the Homepage README now
+  point to the current production/rollback state. The criterion-by-criterion
+  [v1 evidence index](docs/overview/homepage-v1-evidence.md) marks only
+  supported criteria as confirmed.
 - The repository E2E suite passed keyboard, layout-control, and serious/critical
   accessibility checks; six visual snapshot comparisons differed from checked-in
-  baselines by 15–50 px in page height and need follow-up visual baseline review.
+  baselines by 15–50 px in page height and remain an explicit follow-up. Do not
+  regenerate or mark those baselines approved without visual review.
 
-## Next task: HP-031 v1 documentation closeout
+## Next task: review the v1 visual snapshot follow-up
 
-HP-030 is complete. HP-031 is the next implementation task in
-`docs/build/homepage-rework.md`. Update repository documentation and mark only
-acceptance criteria with actual evidence. Keep OKD deployment/ownership and
-automatic failover deferred.
+HP-031 is complete. The next homepage-specific task is to review the six
+desktop/tablet/mobile visual snapshot differences, determine whether they are
+intentional layout changes or regressions, and update baselines only after that
+review. Keep OKD deployment/ownership and automatic failover deferred.
 
 The completed HP-030 drill verified:
 
@@ -64,10 +71,17 @@ The completed HP-030 drill verified:
 Never weaken strict TLS, broaden Prometheus retention, expose raw exporter
 metrics, add outlet-control access, or commit any Secret/API key content.
 
-## Subsequent tasks
+## Completed task
 
 - HP-031: close v1 documentation and mark only acceptance criteria with actual
-  evidence. Keep OKD deployment/ownership and automatic failover deferred.
+  evidence. Completed in the working tree; the visual criterion remains open as
+  documented follow-up.
+
+## Subsequent non-homepage sequence
+
+- Repair and dry-run the Nexus Certbot deployment hook.
+- Install the missing OKD clients on `utility-01`.
+- Prepare and install connected compact OKD on the three Ryzen systems.
 
 ## Useful references
 

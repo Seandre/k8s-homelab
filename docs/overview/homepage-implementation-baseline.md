@@ -2,9 +2,11 @@
 
 Status: HP-001 discovery snapshot, captured 2026-07-19.
 
-This document records the repository-visible baseline for the custom Homepage
-rework. The current stock Homepage remains production and is the rollback target.
-No live resources were modified while capturing this baseline.
+This document records the repository-visible HP-001 baseline captured before the
+custom Homepage cutover. At that time the stock Homepage was production. The
+custom app now serves production; the stock resources remain deployed as the
+named rollback target. No live resources were modified while capturing this
+baseline.
 
 ## Status legend
 
@@ -35,7 +37,8 @@ No live resources were modified while capturing this baseline.
 
 ### Exact rollback files
 
-Keep these files intact until the production cutover and rollback gates pass:
+Keep these files intact as the named rollback target after the production
+cutover and rollback gates:
 
 - `kubernetes/apps/homepage/namespace.yaml`
 - `kubernetes/apps/homepage/serviceaccount.yaml`
@@ -50,7 +53,9 @@ Keep these files intact until the production cutover and rollback gates pass:
 
 The rollback identity is the existing `homepage` namespace, Deployment, Service,
 ConfigMap, RBAC, ServiceAccount, and production Ingress. The current production
-hostname and Service ownership must not be changed before the cutover task.
+Ingress identity and hostname remain stable, while the Git-managed backend now
+targets `homepage-custom-production`; see the [production and rollback
+runbook](../operations/homepage-rework.md).
 
 ## Existing service links
 
@@ -104,13 +109,13 @@ belongs to a later cutover/configuration task.
 
 | Topic | Status and handoff question |
 |---|---|
-| Custom application | **Planned:** one stateless TypeScript/React/Vite/Fastify container, introduced under a preview hostname before production cutover. |
+| Custom application | **Implemented:** one stateless TypeScript/React/Vite/Fastify container, introduced under a preview hostname before production cutover. |
 | Preview hostname | **Approved:** `homepage-preview.lab.seandre.dev`. |
 | Application port | **Approved:** one HTTP process/port on `3000`, matching the current Service and proposed custom container port. |
-| Production port and ownership | **Verified for rollback:** Service port `3000` and Ingress backend `homepage:3000`. **Planned:** custom app must not take production ownership until the cutover task. |
+| Production port and ownership | **Verified:** Service port `3000`; the production Ingress keeps its identity and now targets `homepage-custom-production:3000`. The stock `homepage` Service remains the rollback target. |
 | Monitoring components | **Verified:** `kube-prometheus-stack` chart `87.3.0` enables Prometheus, Alertmanager, and Grafana; Prometheus retention is `7d`. **Unresolved:** exact service DNS names and approved query/field allowlists belong in HP-002. |
 | Preview DNS/TLS | **Approved plan:** create a private split-DNS record for `homepage-preview.lab.seandre.dev` pointing to the existing ingress VIP `192.168.40.30`; use the existing `letsencrypt-production` ClusterIssuer and ACME DNS-01 flow. This is a plan only; no DNS, certificate, or cluster resource was changed. |
-| Current live state | **Unresolved in this repository-only baseline:** no live cluster inspection was performed; verify deployed image/config/reconciliation at the preview/deployment gate. |
+| Current live state | **Superseded by later evidence:** see the [Homepage v1 evidence index](homepage-v1-evidence.md) and [preview/production runbook](../operations/homepage-rework.md). |
 
 ## Baseline sources
 

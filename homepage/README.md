@@ -1,6 +1,8 @@
 # Homelab Homepage
 
-Phase 1 foundation for the custom private homelab homepage.
+Custom private homelab homepage. The application is deployed on k3s through
+Argo CD and serves production at `https://home.lab.seandre.dev`; the isolated
+preview is `https://homepage-preview.lab.seandre.dev`.
 
 ## Local development
 
@@ -36,6 +38,9 @@ NODE_ENV=production npm start
 The server serves the built client and API from one port. Configuration is
 available through `NODE_ENV`, `HOST`, `PORT`, and `SHUTDOWN_GRACE_MS`.
 
-Phase 1 currently exposes fixture-backed `/api/v1/bootstrap`,
-`/api/health/live`, and `/api/health/ready` endpoints. It does not contact
-infrastructure systems.
+Production enables the approved read-only live adapters. Deployment, preview
+verification, production smoke checks, credential handling, and Git-only
+rollback are documented in
+[`docs/operations/homepage-rework.md`](../docs/operations/homepage-rework.md).
+The repository-level acceptance mapping is in
+[`docs/overview/homepage-v1-evidence.md`](../docs/overview/homepage-v1-evidence.md).

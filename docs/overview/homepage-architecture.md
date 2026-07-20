@@ -1,6 +1,6 @@
 # Overview 04: Homelab Homepage Architecture
 
-> Status: implemented on k3s and serving `home.lab.seandre.dev` after the approved HP-029 cutover. Live read-only PDU telemetry is enabled at Git revision `c3d8968`; the owner-approved shortened Gate D technical soak passed at `2026-07-20T21:37:34Z`. The existing Homepage deployment remains deployed as the rollback target until HP-030 completes.
+> Status: implemented on k3s and serving `home.lab.seandre.dev` after the approved HP-029 cutover. HP-030 Git-only rollback and forward recovery passed on 2026-07-20. Live read-only PDU telemetry is enabled at Git revision `c3d8968`; the owner-approved shortened Gate D technical soak passed at `2026-07-20T21:37:34Z`. The existing Homepage deployment remains deployed as the named rollback target. See the [HP-031 v1 evidence index](homepage-v1-evidence.md).
 
 This document defines the product, application, telemetry, security, and deployment architecture for a custom homelab homepage inspired by the default [btop](https://github.com/aristocratos/btop) interface.
 
@@ -319,17 +319,17 @@ Do not claim 30-second automatic failover until end-to-end failure drills prove 
 
 v1 is accepted when:
 
-- it runs privately on k3s under GitOps control;
-- all agreed service links and utilities remain available;
-- live, stale, no-data, not-provisioned, and unsupported states are accurate and distinct;
-- CPU and network graphs reproduce btop's dot style while remaining responsive and web-native;
-- both Proxmox hosts use the matching summary hierarchy;
-- alerts and integrations are read-only;
-- no integration credential appears in the browser, image, Git history, or logs;
-- desktop, tablet, and mobile pass approved visual and interaction checks;
-- keyboard operation, focus visibility, reduced motion, and ordinary control/text contrast pass the accessibility gate;
-- the private GHCR image is reproducibly built, scanned, SBOM-attached, and deployed by digest; and
-- a tested procedure restores the current Homepage deployment.
+- [it runs privately on k3s under GitOps control](homepage-v1-evidence.md#private-gitops);
+- [all agreed service links and utilities remain available](homepage-v1-evidence.md#links);
+- [live, stale, no-data, not-provisioned, and unsupported states are accurate and distinct](homepage-v1-evidence.md#states);
+- [CPU and network graphs reproduce btop's dot style while remaining responsive and web-native](homepage-v1-evidence.md#graphs);
+- [both Proxmox hosts use the matching summary hierarchy](homepage-v1-evidence.md#proxmox);
+- [alerts and integrations are read-only](homepage-v1-evidence.md#read-only);
+- [no integration credential appears in the browser, image, Git history, or logs](homepage-v1-evidence.md#redaction);
+- [desktop, tablet, and mobile pass approved visual and interaction checks](homepage-v1-evidence.md#responsive);
+- [keyboard operation, focus visibility, reduced motion, and ordinary control/text contrast pass the accessibility gate](homepage-v1-evidence.md#accessibility);
+- [the private GHCR image is reproducibly built, scanned, SBOM-attached, and deployed by digest](homepage-v1-evidence.md#image);
+- [a tested procedure restores the current Homepage deployment](homepage-v1-evidence.md#rollback).
 
 OKD operation, automatic failover, household access, and smart-home integration are not v1 acceptance requirements.
 

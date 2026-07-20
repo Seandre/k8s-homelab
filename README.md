@@ -32,7 +32,7 @@ Target stack:
 
 ## Current Status
 
-Last verified: 2026-07-18.
+Last verified: 2026-07-20.
 
 - Proxmox VE installed on the 256 GB NVMe in the HP EliteDesk mini PC
 - 2 TB NVMe configured as Proxmox LVM-thin storage `vmdata`
@@ -55,7 +55,10 @@ Last verified: 2026-07-18.
 - Argo CD is exposed at `https://argocd.lab.seandre.dev`
 - The nginx test app is exposed at `https://nginx-test.lab.seandre.dev`
 - Grafana is exposed at `https://grafana.lab.seandre.dev`
-- Homepage is exposed at `https://home.lab.seandre.dev`
+- Custom Homepage is serving `https://home.lab.seandre.dev`; the preview remains
+  available at `https://homepage-preview.lab.seandre.dev`, and the stock
+  Homepage resources remain deployed as the Git-only rollback target. See the
+  [Homepage v1 evidence index](docs/overview/homepage-v1-evidence.md).
 - KOReader Sync is exposed at `https://kosync.lab.seandre.dev`
 - The VitePress documentation site is exposed at `https://docs.lab.seandre.dev`
 - `utility-01` is active at `192.168.40.24`; Git, Ansible, and `kubectl` are installed, while `oc`, `openshift-install`, and `oc-mirror` remain to be installed
@@ -73,6 +76,7 @@ Last verified: 2026-07-18.
 - `docs/optional/`: optional desktop, application, and GitOps learning projects
 - `docs/operations/`: rebuild and troubleshooting references
 - `docs-site/`: VitePress configuration, local search, clean-URL nginx configuration, and static container build
+- `homepage/`: custom Homepage React/Fastify source, tests, and local verification commands
 - `ansible/`: inventory and playbooks for node prep and k3s operations
 - `kubernetes/bootstrap/`: one-time bootstrap manifests for Argo CD and other cluster bring-up steps
 - `kubernetes/apps/`: reusable application definitions that can be selected by one or more clusters
@@ -89,6 +93,17 @@ The repo keeps reusable definitions separate from cluster-specific selection:
 4. `homelab-infrastructure` watches `kubernetes/clusters/homelab/infrastructure`, whose kustomization selects infrastructure definitions from `kubernetes/infrastructure`.
 
 App manifests should stay in `kubernetes/apps` unless they are truly cluster-specific. Moving them under `kubernetes/clusters/homelab` would mix reusable app definitions with the homelab deployment selection layer.
+
+## Homepage Workflow
+
+The [Homepage Rework Build Plan](docs/build/homepage-rework.md) is the
+dependency-ordered implementation record. Run local checks from `homepage/`
+using the commands in [homepage/README.md](homepage/README.md). The
+[Preview, production, and rollback runbook](docs/operations/homepage-rework.md)
+covers credential provisioning, preview verification, GitOps deployment,
+production smoke checks, and Git-only rollback/forward recovery. The
+[v1 evidence index](docs/overview/homepage-v1-evidence.md) records the current
+acceptance status, including the outstanding visual-baseline follow-up.
 
 ## Current Direction
 

@@ -307,6 +307,19 @@ the elevated shell; and trigger the approved Argo CD hard-refresh annotation
 when the forward commit was not observed by the normal poll interval. None of
 these changed application resources outside the reviewed Git commits.
 
+## HP-031 v1 documentation closeout — 2026-07-20
+
+The repository now records production ownership, the Git-only rollback target,
+the HP-030 drill, and the remaining v1 evidence in the [Homepage v1 evidence
+index](../overview/homepage-v1-evidence.md). The stock Homepage Deployment,
+ConfigMap, Service, Ingress, TLS Secret, ServiceAccount, and RBAC remain
+intentionally deployed; removal requires a separate approved retention plan.
+
+OKD deployment ownership, an OKD overlay, manual cross-cluster switching, and
+automatic failover remain deferred. The evidence index also records the six
+visual snapshot comparisons that need baseline review; they are not represented
+as a passed acceptance criterion.
+
 ## Credential provisioning and rotation
 
 The integration credential names and expected keys are defined in
