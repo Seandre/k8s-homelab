@@ -153,11 +153,13 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .network-resource .dot-graph small { flex-basis: 4.5rem; text-align: right; }
 .process-box { grid-column: span 8; min-height: 100%; display: flex; flex-direction: column; }
 .process-box .panel-body { flex: 1; }
-.service-columns, .service-list a { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr) auto; align-items: center; column-gap: 0.5rem; }
+.process-box .service-columns, .process-box .service-list a { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr) 4.5rem; align-items: center; column-gap: 0.5rem; }
 .service-columns { padding: 0 0.35rem 0.2rem; color: var(--muted); font-size: 0.55rem; letter-spacing: 0.06em; border-bottom: 1px solid var(--divider); }
+.process-box .service-columns span:last-child { text-align: right; }
 .service-list a { padding: 0.4rem 0.35rem; }
-.service-list strong { margin: 0; }
-.service-list small { margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.process-box .service-list strong { margin: 0; }
+.process-box .service-list small { margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.process-box .service-list .state { justify-self: end; }
 .pve-workload-row { grid-column: span 4; display: grid; gap: 0.5rem; }
 .compute-section { margin-top: 1rem; }
 .compute-section:first-of-type { margin-top: 0; }

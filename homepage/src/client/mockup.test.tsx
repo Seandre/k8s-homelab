@@ -29,6 +29,7 @@ describe('overview network tile', () => {
     expect(markup).toContain('7.3');
     expect(markup).toContain('TOTAL TRANSFER');
     expect(markup).toContain('CLIENTS');
+    expect(markup).not.toContain('UniFi Site Manager');
     expect(markup).not.toContain('PVE-01 / GLANCES');
   });
 });

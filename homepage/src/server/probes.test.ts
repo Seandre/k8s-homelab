@@ -8,16 +8,23 @@ function enabledConfig() { return { ...gitOwnedRuntimeConfig, featureFlags: { ..
 
 describe('allowlisted reachability probes', () => {
   it('uses only configured targets and requires two failures/two successes for state transitions', async () => {
-    const clock = fakeClock(); let healthy = true; const requests: Array<{ url: string; redirect: string }> = [];
-    const fetcher: ProbeFetch = async (url, init) => { requests.push({ url, redirect: init.redirect }); return { ok: healthy, status: healthy ? 200 : 503 }; };
+    const clock = fakeClock(); let healthy = true; const requests: Array<{ url: string; method: string; redirect: string }> = [];
+    const fetcher: ProbeFetch = async (url, init) => { requests.push({ url, method: init.method, redirect: init.redirect }); return { ok: healthy, status: healthy ? 200 : 503 }; };
     const runner = new AllowlistedProbeRunner(enabledConfig(), fetcher, clock);
     expect(await runner.run('argocd-probe')).toMatchObject({ status: 'UP', metadata: { freshness: 'CURRENT' } });
     healthy = false; expect((await runner.run('argocd-probe')).status).toBe('UP');
     expect((await runner.run('argocd-probe')).status).toBe('DEGRADED');
     healthy = true; clock.advance(15_000); expect((await runner.run('argocd-probe')).status).toBe('DEGRADED');
     expect((await runner.run('argocd-probe')).status).toBe('UP');
-    expect(requests).toEqual(expect.arrayContaining([{ url: 'https://argocd.lab.seandre.dev', redirect: 'error' }]));
+    expect(requests).toEqual(expect.arrayContaining([{ url: 'https://argocd.lab.seandre.dev', method: 'HEAD', redirect: 'manual' }]));
     await expect(runner.run('https://example.com')).rejects.toBeInstanceOf(ProbeTargetNotAllowedError);
+  });
+
+  it('treats redirects and authentication responses as reachable without following them', async () => {
+    for (const status of [302, 401, 403, 404]) {
+      const runner = new AllowlistedProbeRunner(enabledConfig(), async () => ({ ok: false, status }), fakeClock());
+      await expect(runner.run('argocd-probe')).resolves.toMatchObject({ status: 'UP', latencyMs: 0 });
+    }
   });
 
   it('does not issue requests while the probe feature is disabled', async () => {

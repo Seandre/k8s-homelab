@@ -22,6 +22,7 @@ describe('Git-owned runtime configuration', () => {
     expect(gitOwnedRuntimeConfig.featureFlags.prometheus).toBe(true);
     expect(gitOwnedRuntimeConfig.pduPower).toEqual({ enabled: true, deviceName: 'USP-PDU-Pro' });
     expect(gitOwnedRuntimeConfig.probes.every((probe) => probe.target !== 'https://example.com')).toBe(true);
+    expect(gitOwnedRuntimeConfig.probes).toHaveLength(gitOwnedRuntimeConfig.serviceLinks.length);
   });
 
   it('requires a non-empty Git-owned PDU device mapping', () => {
