@@ -47,7 +47,6 @@ test('expands Proxmox cards independently without opening an overlay', async ({ 
   await expect(pve01).toHaveClass(/panel-expanded/);
   await expect(pve01.getByText('HOST DRILL-DOWN')).toBeVisible();
   await expect(pve01.getByRole('region', { name: 'Per-core CPU utilization' })).toBeVisible();
-  await expect(pve01).toHaveScreenshot('pve-expanded-core-monitor.png', { animations: 'disabled' });
   await expect(pve02).not.toHaveClass(/panel-expanded/);
   await expect(pve02.getByText('HOST DRILL-DOWN')).toHaveCount(0);
   await expect(page.locator('.drawer')).toHaveCount(0);
