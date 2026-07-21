@@ -134,7 +134,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .pve-card { grid-column: span 6; }
 .pve-card .panel-body { padding: 0; min-height: 0; }
 .pve-cpu-region { display: grid; grid-template-columns: minmax(0, 1fr) 9rem; gap: 0.5rem; padding: 0.5rem 0.55rem; }
-.pve-cpu-region > .dot-graph { align-items: stretch; gap: 0.25rem; }
+.pve-cpu-region > .dot-graph { align-items: stretch; gap: 0.12rem; }
 .pve-cpu-region > .dot-graph .dot-graph-trace { grid-template-rows: repeat(var(--graph-rows), minmax(0, 1fr)); padding-inline-end: 0.75rem; }
 .pve-cpu-region > .dot-graph .dot-graph-row { display: flex; align-items: center; justify-content: flex-end; }
 .pve-cpu-summary { display: grid; align-content: center; gap: 0.25rem; border-left: 1px solid var(--divider); padding-left: 0.55rem; color: var(--muted); font-size: 0.58rem; }
@@ -146,7 +146,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .pve-resource h3 { margin: 0 0 0.3rem; color: var(--title); font-size: 0.62rem; letter-spacing: 0.06em; }
 .pve-resource p { margin: 0.25rem 0 0; color: var(--muted); font-size: 0.56rem; line-height: 1.35; }
 .pve-resource p b { color: var(--fg); }
-.pve-resource .dot-graph { gap: 0.25rem; }
+.pve-resource .dot-graph { gap: 0.12rem; }
 .pve-resource .dot-graph-trace { padding-inline-end: 0.75rem; }
 .pve-resource .dot-graph-row { font-size: 0.65rem; line-height: 0.74; }
 .pve-resource .dot-graph small { font-size: 0.5rem; }
@@ -225,9 +225,10 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .metric-value small { color: var(--muted); font-size: 0.6rem; font-weight: 400; margin-left: 0.2rem; }
 .metric-detail { letter-spacing: 0; text-transform: none; }
 .resource-graphs { display: grid; gap: 0.05rem; margin-top: 0.45rem; }
-.dot-graph { --graph-label-width: 12ch; display: grid; grid-template-columns: minmax(0, 1fr) var(--graph-label-width); align-items: end; gap: 0.45rem; margin-top: 0; overflow: hidden; color: var(--graph-color, var(--focus)); }
+.dot-graph { --graph-label-width: 12ch; display: grid; grid-template-columns: minmax(0, 1fr) var(--graph-label-width); align-items: end; gap: 0.2rem; margin-top: 0; overflow: hidden; color: var(--graph-color, var(--focus)); }
 .dot-graph-trace { display: grid; flex: 1 1 auto; min-width: 0; overflow: hidden; }
 .dot-graph-row { display: block; overflow: hidden; font-size: 0.82rem; letter-spacing: 0.02rem; line-height: 0.85; white-space: nowrap; }
+.braille-cell { display: inline-block; width: 1ch; }
 .dot-graph small { align-self: end; color: var(--muted); font-size: 0.6rem; font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
 .dot-graph-cpu { --graph-start: var(--cpu-start); --graph-mid: var(--cpu-mid); --graph-end: var(--cpu-end); --graph-color: var(--cpu-end); }
 .dot-graph-memory { --graph-start: var(--memory-start); --graph-mid: var(--memory-mid); --graph-end: var(--memory-end); --graph-color: var(--memory-end); }
@@ -257,7 +258,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .dot-graph-trace { container-type: inline-size; overflow: visible; padding-block: 0.08rem; }
 .dot-graph-row { overflow: visible; font-size: clamp(0.5rem, calc(100cqi / var(--graph-columns)), 0.82rem); letter-spacing: 0; line-height: 1.1; }
 .pve-resource .dot-graph-row { display: flex; align-items: center; justify-content: flex-end; font-size: clamp(0.5rem, calc(100cqi / var(--graph-columns)), 0.65rem); line-height: 1.1; }
-.traffic-graph { display: grid; grid-template-columns: minmax(0, 1fr) 15ch; align-items: center; gap: 0.45rem; margin-top: 0.45rem; color: var(--muted); }
+.traffic-graph { display: grid; grid-template-columns: minmax(0, 1fr) 15ch; align-items: center; gap: 0.2rem; margin-top: 0.45rem; color: var(--muted); }
 .traffic-graph-trace { container-type: inline-size; display: grid; min-width: 0; overflow: hidden; padding-block: 0.08rem; }
 .traffic-graph-row, .traffic-graph-baseline { display: block; overflow: visible; font-size: clamp(0.5rem, calc(100cqi / var(--graph-columns)), 0.82rem); letter-spacing: 0; line-height: 1.1; white-space: nowrap; }
 .traffic-graph-baseline { color: var(--muted); line-height: 0.55; }

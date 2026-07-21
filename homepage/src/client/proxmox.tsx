@@ -1,6 +1,6 @@
 import React from 'react';
 import type { Host, TimeSeries } from '../shared/contracts.js';
-import { DotGraph, Metric, Panel } from './components.js';
+import { BrailleCells, DotGraph, Metric, Panel } from './components.js';
 import { toBrailleGraphRows } from './graph.js';
 import { bytesToGiB, bytesToTiB } from './overview.js';
 
@@ -34,7 +34,7 @@ function CoreMonitor({ hostName, cores, timeSeries }: { hostName: string; cores:
           const coreIndex = rowIndex + (columnIndex * midpoint);
           const values = seriesValues(timeSeries, `${hostName} CORE ${coreIndex}`, value);
           const trace = toBrailleGraphRows(values, 16, 1)[0] ?? '\u2800'.repeat(16);
-          return <div className="core-meter" aria-label={`Core ${coreIndex}: ${value} percent; ${values.length} historical samples`} key={coreIndex}><strong>C{coreIndex}</strong><span className={`core-history core-history-${coreHistoryTone(value)}`} aria-hidden="true">{trace}</span><b>{value}%</b></div>;
+          return <div className="core-meter" aria-label={`Core ${coreIndex}: ${value} percent; ${values.length} historical samples`} key={coreIndex}><strong>C{coreIndex}</strong><span className={`core-history core-history-${coreHistoryTone(value)}`} aria-hidden="true"><BrailleCells row={trace} /></span><b>{value}%</b></div>;
         })}</div>)}
       </div>
     </section>
