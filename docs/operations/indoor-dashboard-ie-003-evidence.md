@@ -2,8 +2,8 @@
 
 Date: 2026-07-21
 
-Result: **LOCAL BUILD AND IMAGE VERIFICATION PASS; supply-chain CI pending merge
-to `main`**. The production
+Result: **PASS**. Local verification and the required `main` supply-chain CI
+completed successfully. The production
 definition uses the official Home Assistant `2026.7.2` base at
 `sha256:1476924357b46e80735c13e94232ba5c853cac052e9df4bb28d50fa56348097b`.
 It bakes the unchanged IE-002 Coway component and its hash-pinned
@@ -114,9 +114,15 @@ the matching local report. The workflow now preserves both reports and blocks
 their normalized delta instead of treating inherited upstream findings as
 derived-image defects.
 
-The successful Trivy delta gate, SBOM/provenance attestations, and full-SHA GHCR
-publication remain pending the next `main` run. Record its URL and published
-manifest digest here after that run.
+The third [`main` workflow run](https://github.com/seandre/k8s-homelab/actions/runs/29860323653)
+passed source verification, context tests, ShellCheck, the production build,
+Home Assistant `check_config`, all four Coway tests, both Trivy scans, the
+zero-delta policy, and report preservation. It published SBOM and maximum-mode
+provenance attestations with the immutable image:
+
+```text
+ghcr.io/seandre/k8s-homelab-home-assistant:sha-b5bc31cb8f0ac715f5794c95e03510e03658a5e4@sha256:9f0c4eb2c42db67d70c12ff6ca3ed9c1fcd314d9f66929a0de61064654610803
+```
 
 ## Rollback and handoff
 
@@ -126,8 +132,7 @@ is disposable. Published full-SHA tags must remain immutable evidence; do not
 retag them. IE-004 should deploy a reviewed published image by manifest digest,
 retain the prior manifest digest, and use that prior digest for rollback.
 
-IE-004 is the next unblocked package after the pending supply-chain CI run
-succeeds. It
-owns `/config`, the PVC, GHCR pull secret, k3s workload, private ingress, Argo CD
-selection, live persistence proof, and deployed-image rollback. IE-003 did not
-create or modify any Kubernetes object.
+IE-004 is unblocked. It owns `/config`, the PVC, GHCR pull secret if package
+visibility requires one, k3s workload, private ingress, Argo CD selection, live
+persistence proof, and deployed-image rollback. IE-003 did not create or modify
+any Kubernetes object.
