@@ -1,6 +1,6 @@
 import React, { useId, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from 'react';
 import type { Freshness, Severity, TimeSeries } from '../shared/contracts.js';
-import { toBrailleGraphRows } from './graph.js';
+import { toBrailleGraphRows, toMirroredBrailleGraphRows } from './graph.js';
 
 export function StateBadge({ severity, label = severity }: { severity: Severity; label?: string }) {
   return <span className={`state state-${severity.toLowerCase()}`}>{label}</span>;
@@ -111,6 +111,29 @@ export function DotGraph({ label, values, unit, tone = 'cpu', height = 2, width 
   const rows = hasSamples ? graphRows.map((row) => `${'\u00a0'.repeat(width - activeCells)}${row}`) : Array.from({ length: height }, () => '\u00a0'.repeat(width));
   const current = hasSamples ? `${values.at(-1)}${unit}` : 'N/S';
   return <div className={`dot-graph dot-graph-${tone}`} role="img" aria-label={`${label}: ${current}; ${values.length} samples; ${height * 4} vertical Braille dot levels`}><div className="dot-graph-trace" style={{ '--graph-columns': width } as CSSProperties} aria-hidden="true">{rows.map((row, index) => <span className="dot-graph-row" key={index}>{row}</span>)}</div><small>{label} {current}</small></div>;
+}
+
+export function MirroredTrafficGraph({ upload, download, unit, height = 3, width = 64 }: { upload: number[]; download: number[]; unit: string; height?: number; width?: number }) {
+  const hasSamples = upload.length > 0 || download.length > 0;
+  const activeCells = Math.min(width, Math.max(1, Math.ceil(Math.max(upload.length, download.length) / 2)));
+  const graph = toMirroredBrailleGraphRows(upload, download, activeCells, height);
+  const pad = (row: string) => `${'\u00a0'.repeat(width - activeCells)}${row}`;
+  const empty = '\u00a0'.repeat(width);
+  const uploadRows = hasSamples ? graph.upload.map(pad) : Array.from({ length: height }, () => empty);
+  const downloadRows = hasSamples ? graph.download.map(pad) : Array.from({ length: height }, () => empty);
+  const baseline = '⠤'.repeat(width);
+  const upCurrent = upload.length > 0 ? `${upload.at(-1)}${unit}` : 'N/S';
+  const downCurrent = download.length > 0 ? `${download.at(-1)}${unit}` : 'N/S';
+  const summary = `Upload: ${upCurrent}, above baseline; download: ${downCurrent}, below baseline; ${Math.max(upload.length, download.length)} samples.`;
+
+  return <div className="traffic-graph" role="img" aria-label={summary}>
+    <div className="traffic-graph-trace" style={{ '--graph-columns': width } as CSSProperties} aria-hidden="true">
+      <div className="traffic-graph-upload">{uploadRows.map((row, index) => <span className="traffic-graph-row" key={index}>{row}</span>)}</div>
+      <span className="traffic-graph-baseline">{baseline}</span>
+      <div className="traffic-graph-download">{downloadRows.map((row, index) => <span className="traffic-graph-row" key={index}>{row}</span>)}</div>
+    </div>
+    <small><span className="traffic-upload-label">UP {upCurrent}</span><span className="traffic-download-label">DOWN {downCurrent}</span></small>
+  </div>;
 }
 
 export function ComponentGallery() {

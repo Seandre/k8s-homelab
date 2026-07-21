@@ -242,6 +242,19 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .dot-graph-trace { container-type: inline-size; overflow: visible; padding-block: 0.08rem; }
 .dot-graph-row { overflow: visible; font-size: clamp(0.5rem, calc(100cqi / var(--graph-columns)), 0.82rem); letter-spacing: 0; line-height: 1.1; }
 .pve-resource .dot-graph-row { font-size: clamp(0.5rem, calc(100cqi / var(--graph-columns)), 0.65rem); line-height: 1.1; }
+.traffic-graph { display: flex; align-items: center; gap: 0.45rem; margin-top: 0.45rem; color: var(--muted); }
+.traffic-graph-trace { container-type: inline-size; display: grid; flex: 1 1 auto; min-width: 0; overflow: visible; padding-block: 0.08rem; }
+.traffic-graph-row, .traffic-graph-baseline { display: block; overflow: visible; font-size: clamp(0.5rem, calc(100cqi / var(--graph-columns)), 0.82rem); letter-spacing: 0; line-height: 1.1; white-space: nowrap; }
+.traffic-graph-baseline { color: var(--divider); line-height: 0.55; }
+.traffic-graph-upload .traffic-graph-row:nth-child(1) { color: var(--upload-end); }
+.traffic-graph-upload .traffic-graph-row:nth-child(2) { color: var(--upload-mid); }
+.traffic-graph-upload .traffic-graph-row:nth-child(n+3) { color: var(--upload-start); }
+.traffic-graph-download .traffic-graph-row:nth-child(1) { color: var(--download-start); }
+.traffic-graph-download .traffic-graph-row:nth-child(2) { color: var(--download-mid); }
+.traffic-graph-download .traffic-graph-row:nth-child(n+3) { color: var(--download-end); }
+.traffic-graph > small { display: grid; flex: 0 0 auto; gap: 0.12rem; font-size: 0.6rem; }
+.traffic-upload-label { color: var(--upload-end); }
+.traffic-download-label { color: var(--download-end); }
 .cpu-box { --box-color: var(--cpu); }
 .memory-box { --box-color: var(--memory); }
 .network-box { --box-color: var(--network); }
