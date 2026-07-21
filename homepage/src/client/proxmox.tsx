@@ -16,6 +16,12 @@ function byteCountLabel(bytes: number | null) {
   return `${(bytes / (1024 ** unitIndex)).toFixed(unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`;
 }
 
+function coreHistoryTone(value: number) {
+  if (value >= 80) return 'high';
+  if (value >= 50) return 'medium';
+  return 'low';
+}
+
 function CoreMonitor({ hostName, cores, timeSeries }: { hostName: string; cores: number[] | null; timeSeries: TimeSeries[] }) {
   if (cores === null) return <div className="proxmox-core-monitor core-monitor-unsupported"><span>PER-CORE</span><strong>NOT SUPPORTED</strong></div>;
   const midpoint = Math.ceil(cores.length / 2);
@@ -28,7 +34,7 @@ function CoreMonitor({ hostName, cores, timeSeries }: { hostName: string; cores:
           const coreIndex = rowIndex + (columnIndex * midpoint);
           const values = seriesValues(timeSeries, `${hostName} CORE ${coreIndex}`, value);
           const trace = toBrailleGraphRows(values, 16, 1)[0] ?? '\u2800'.repeat(16);
-          return <div className="core-meter" aria-label={`Core ${coreIndex}: ${value} percent; ${values.length} historical samples`} key={coreIndex}><strong>C{coreIndex}</strong><span className="core-history" aria-hidden="true">{trace}</span><b>{value}%</b></div>;
+          return <div className="core-meter" aria-label={`Core ${coreIndex}: ${value} percent; ${values.length} historical samples`} key={coreIndex}><strong>C{coreIndex}</strong><span className={`core-history core-history-${coreHistoryTone(value)}`} aria-hidden="true">{trace}</span><b>{value}%</b></div>;
         })}</div>)}
       </div>
     </section>

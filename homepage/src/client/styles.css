@@ -193,7 +193,10 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .core-column { display: grid; gap: 0.25rem; min-width: 0; padding-right: 0.55rem; }
 .core-column + .core-column { border-left: 1px solid var(--divider); padding-right: 0; padding-left: 0.55rem; }
 .core-meter strong { color: var(--fg); font-size: 0.66rem; }
-.core-history { container-type: inline-size; display: flex; align-items: center; justify-content: flex-end; min-width: 0; overflow: hidden; color: var(--cpu-end); font-size: clamp(0.5rem, calc(100cqi / 16), 0.7rem); letter-spacing: 0; line-height: 1; white-space: nowrap; }
+.core-history { container-type: inline-size; display: flex; align-items: center; justify-content: flex-end; min-width: 0; overflow: hidden; font-size: clamp(0.5rem, calc(100cqi / 16), 0.7rem); letter-spacing: 0; line-height: 1; white-space: nowrap; }
+.core-history-low { color: var(--cpu-start); }
+.core-history-medium { color: var(--cpu-mid); }
+.core-history-high { color: var(--cpu-end); }
 .core-monitor-unsupported { display: flex; justify-content: space-between; color: var(--muted); font-size: 0.58rem; }
 .panel { min-width: 0; border: 1px solid var(--divider); background: var(--surface); box-shadow: none; }
 .panel:focus-visible { border-color: var(--focus); }

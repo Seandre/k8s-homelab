@@ -26,6 +26,7 @@ describe('Proxmox drill-down', () => {
     expect(markup).toContain('VIRTUAL MACHINES');
     expect(markup).toContain('32 vertical Braille dot levels');
     expect(markup).toContain('4 historical samples');
+    expect(markup).toContain('core-history-low');
     expect(markup).not.toContain('core-total');
     expect(markup).not.toContain('PDU outlet draw');
     expect(markup).not.toContain('host runtime');
@@ -37,9 +38,11 @@ describe('Proxmox drill-down', () => {
 
   it('labels an unavailable summary metric without inventing a value', () => {
     const host = healthyBootstrapFixture.hosts.find((candidate) => candidate.id === 'pve-02')!;
-    const markup = renderToStaticMarkup(<ProxmoxPanel host={{ ...host, powerWatts: null }} expanded onExpand={() => undefined} />);
+    const markup = renderToStaticMarkup(<ProxmoxPanel host={{ ...host, powerWatts: null, cpuCorePercentages: [90, ...host.cpuCorePercentages!.slice(1)] }} expanded onExpand={() => undefined} />);
     expect(markup).toContain('PWR <b>N/S</b>');
     expect(markup).not.toContain('PDU outlet draw');
+    expect(markup).toContain('core-history-medium');
+    expect(markup).toContain('core-history-high');
     expect(markup).toContain('STALE');
   });
 });
