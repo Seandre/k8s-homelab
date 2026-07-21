@@ -7,18 +7,6 @@ function clampPercent(value: number) {
   return Math.min(100, Math.max(0, value));
 }
 
-function resample(values: number[], count: number) {
-  if (values.length === 0) return [];
-  if (count === 1) return [values[0]!];
-  return Array.from({ length: count }, (_, index) => {
-    const position = index / (count - 1) * (values.length - 1);
-    const lower = Math.floor(position);
-    const upper = Math.ceil(position);
-    const progress = position - lower;
-    return values[lower]! + ((values[upper]! - values[lower]!) * progress);
-  });
-}
-
 function dotsInRow(value: number, row: number, height: number) {
   const totalDots = height * 4;
   const filledDots = Math.ceil((clampPercent(value) / 100) * totalDots);
@@ -32,9 +20,15 @@ function toBrailleCell(left: number, right: number) {
 
 export function toBrailleGraphRows(values: number[], cells = values.length, height = 1): string[] {
   if (cells <= 0 || values.length === 0) return [];
-  // Retain a fixed-width history window. New samples appear at the right edge
-  // and push the oldest ones left, rather than continually shrinking history.
-  const samples = resample(values.slice(-(cells * 2)), cells * 2);
+  const sampleCapacity = cells * 2;
+  const visibleValues = values.slice(-sampleCapacity);
+  // A cell contains two horizontal samples. Pad the incomplete history on the
+  // left so the newest sample always enters at the far right; once the window
+  // is full, each subsequent sample shifts every older sample one dot left.
+  const samples = [
+    ...Array<number>(sampleCapacity - visibleValues.length).fill(0),
+    ...visibleValues,
+  ];
   return Array.from({ length: height }, (_, row) => {
     return Array.from({ length: cells }, (_, cell) => {
       const left = dotsInRow(samples[cell * 2]!, row, height);
@@ -45,7 +39,10 @@ export function toBrailleGraphRows(values: number[], cells = values.length, heig
 }
 
 export function toBrailleGraph(values: number[], cells = values.length): string {
-  return toBrailleGraphRows(values, cells)[0] ?? '';
+  // The single-row helper historically treats each value as a complete cell.
+  // Keep that compact API while the scrolling row renderer works in half-cell
+  // sample columns.
+  return toBrailleGraphRows(values.flatMap((value) => [value, value]), cells)[0] ?? '';
 }
 
 export function toMirroredBrailleGraphRows(upload: number[], download: number[], cells: number, height: number) {

@@ -106,11 +106,9 @@ export function DetailDrawer({ title, children, onClose }: { title: string; chil
 
 export function DotGraph({ label, values, unit, tone = 'cpu', height = 2, width = 64 }: { label: string; values: number[]; unit: string; tone?: 'cpu' | 'memory' | 'disk' | 'download' | 'upload'; height?: number; width?: number }) {
   const hasSamples = values.length > 0;
-  const activeCells = Math.min(width, Math.max(1, Math.ceil(values.length / 2)));
-  const graphRows = toBrailleGraphRows(values, activeCells, height);
-  const rows = hasSamples ? graphRows.map((row) => `${'\u00a0'.repeat(width - activeCells)}${row}`) : Array.from({ length: height }, () => '\u00a0'.repeat(width));
+  const rows = hasSamples ? toBrailleGraphRows(values, width, height) : Array.from({ length: height }, () => '\u2800'.repeat(width));
   const current = hasSamples ? `${values.at(-1)}${unit}` : 'N/S';
-  return <div className={`dot-graph dot-graph-${tone}`} role="img" aria-label={`${label}: ${current}; ${values.length} samples; ${height * 4} vertical Braille dot levels`}><div className="dot-graph-trace" style={{ '--graph-columns': width } as CSSProperties} aria-hidden="true">{rows.map((row, index) => <span className="dot-graph-row" key={index}>{row}</span>)}</div><small>{label} {current}</small></div>;
+  return <div className={`dot-graph dot-graph-${tone}`} role="img" aria-label={`${label}: ${current}; ${values.length} samples; ${height * 4} vertical Braille dot levels`}><div className="dot-graph-trace" style={{ '--graph-columns': width, '--graph-rows': height } as CSSProperties} aria-hidden="true">{rows.map((row, index) => <span className="dot-graph-row" key={index}>{row}</span>)}</div><small>{label} {current}</small></div>;
 }
 
 export function MirroredTrafficGraph({ upload, download, unit, height = 3, width = 64 }: { upload: number[]; download: number[]; unit: string; height?: number; width?: number }) {

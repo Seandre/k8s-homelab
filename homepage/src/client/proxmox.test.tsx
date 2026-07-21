@@ -18,6 +18,7 @@ describe('Proxmox drill-down', () => {
     expect(markup).toContain('SWAP');
     expect(markup).toContain('STORAGE');
     expect(markup).toContain('GUESTS');
+    expect(markup).toContain('32 vertical Braille dot levels');
   });
 
   it('labels a partial supported metric as not supported instead of inventing a value', () => {

@@ -37,7 +37,7 @@ export function ProxmoxPanel({ host, expanded, onExpand, timeSeries = [] }: { ho
   return (
     <Panel className="cpu-box pve-card" title={host.name} eyebrow="CPU / PROXMOX" severity={host.metadata.severity} freshness={host.metadata.freshness} href={`https://${host.name}.lab.seandre.dev:8006`} expanded={expanded} onExpand={onExpand}>
       <div className="pve-cpu-region">
-        <DotGraph label="CPU" values={seriesValues(timeSeries, `${host.name} CPU`, cpu)} unit="%" tone="cpu" height={6} width={52} />
+        <DotGraph label="CPU" values={seriesValues(timeSeries, `${host.name} CPU`, cpu)} unit="%" tone="cpu" height={8} width={52} />
         <div className="pve-cpu-summary"><strong>{host.cpuModel ?? 'CPU MODEL N/S'}</strong><span>TEMP <b>{host.temperatureCelsius ?? '—'}°C</b></span><span>LOAD <b>{host.loadAverage?.[0].toFixed(2) ?? 'N/S'}</b></span><span>PWR <b>{host.powerWatts ?? 'N/S'}{host.powerWatts === null ? '' : ' W'}</b></span><span>VMS <b>{host.runningVmCount ?? 'N/S'}</b></span><span>UP <b>{uptimeLabel(host.uptimeSeconds)}</b></span></div>
       </div>
       <div className="pve-resource-grid">

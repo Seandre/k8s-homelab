@@ -23,11 +23,16 @@ describe('braille graph', () => {
   it('renders partial bars as contiguous bottom-up dots', () => {
     const rows = toBrailleGraphRows([50, 50], 1, 1);
     expect(rows).toEqual(['⣤']);
+
+    const tallRows = toBrailleGraphRows([51, 51], 1, 2);
+    expect(tallRows).toEqual(['⣀', '⣿']);
   });
 
-  it('keeps the newest samples at the right edge of a fixed-width graph', () => {
-    const rows = toBrailleGraphRows([0, 0, 0, 0, 0, 0, 100, 100], 2, 1);
-    expect(rows).toEqual(['⠀⣿']);
+  it('streams new samples in from the right and shifts history left', () => {
+    expect(toBrailleGraphRows([100], 2, 1)).toEqual(['⠀⢸']);
+    expect(toBrailleGraphRows([100, 0], 2, 1)).toEqual(['⠀⡇']);
+    expect(toBrailleGraphRows([100, 0, 0], 2, 1)).toEqual(['⢸⠀']);
+    expect(toBrailleGraphRows([100, 0, 0, 0, 100], 2, 1)).toEqual(['⠀⢸']);
   });
 
   it('clamps out-of-range values without producing missing glyphs', () => {
@@ -39,7 +44,7 @@ describe('braille graph', () => {
 
   it('keeps upload above and reverses download below a shared baseline', () => {
     const rows = toMirroredBrailleGraphRows([100], [50], 1, 2);
-    expect(rows.upload).toEqual(['⣿', '⣿']);
+    expect(rows.upload).toEqual(['⢸', '⢸']);
     expect(rows.download[0]).not.toBe('⠀');
     expect(rows.download[1]).toBe('⠀');
   });
