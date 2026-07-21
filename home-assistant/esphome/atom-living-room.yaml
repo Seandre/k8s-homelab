@@ -1,0 +1,87 @@
+substitutions:
+  device_name: atom-living-room
+  friendly_name: Living Room Bluetooth Proxy
+
+esphome:
+  name: ${device_name}
+  friendly_name: ${friendly_name}
+  comment: Local BLE proxy for the Living Room Aranet4
+  name_add_mac_suffix: false
+
+esp32:
+  variant: esp32s3
+  flash_size: 8MB
+  framework:
+    type: esp-idf
+
+wifi:
+  ssid: !secret atom_wifi_ssid
+  password: !secret atom_wifi_password
+  domain: .lab.home.arpa
+  power_save_mode: none
+  reboot_timeout: 15min
+
+api:
+  encryption:
+    key: !secret atom_api_encryption_key
+  reboot_timeout: 15min
+
+ota:
+  - platform: esphome
+    password: !secret atom_ota_password
+
+logger:
+  level: WARN
+  baud_rate: 0
+
+esp32_ble_tracker:
+  scan_parameters:
+    active: true
+
+bluetooth_proxy:
+  active: true
+  connection_slots: 3
+
+light:
+  - platform: esp32_rmt_led_strip
+    id: status_pixel
+    internal: true
+    pin: GPIO35
+    num_leds: 4
+    rgb_order: GRB
+    chipset: WS2812
+    restore_mode: ALWAYS_OFF
+
+binary_sensor:
+  - platform: status
+    name: Status
+    entity_category: diagnostic
+
+button:
+  - platform: restart
+    name: Restart
+    entity_category: diagnostic
+  - platform: safe_mode
+    name: Safe mode restart
+    entity_category: diagnostic
+
+interval:
+  - interval: 30s
+    then:
+      - if:
+          condition:
+            api.connected:
+          then:
+            - light.turn_on:
+                id: status_pixel
+                brightness: 20%
+                red: 0%
+                green: 100%
+                blue: 0%
+          else:
+            - light.turn_on:
+                id: status_pixel
+                brightness: 20%
+                red: 100%
+                green: 50%
+                blue: 0%
