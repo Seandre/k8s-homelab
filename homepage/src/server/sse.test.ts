@@ -14,6 +14,7 @@ describe('bootstrap SSE broker', () => {
   it('orders event IDs and replays only missed events after reconnect', () => {
     const broker = new BootstrapEventBroker();
     broker.publish(healthyBootstrapFixture); broker.publish({ ...healthyBootstrapFixture, generatedAt: '2026-07-19T12:01:00.000Z' });
+    expect(broker.latestEventId()).toBe(2);
     const first = connection(); broker.subscribe(first.value, 0);
     expect(first.writes.join('')).toContain('id: 1');
     expect(first.writes.join('')).toContain('id: 2');

@@ -86,11 +86,19 @@ export function buildApp(options: AppOptions): FastifyInstance {
   });
 
   app.get('/api/v1/events', (request, reply) => {
-    const requestedId = Number(request.headers['last-event-id'] ?? 0);
-    const afterId = Number.isSafeInteger(requestedId) && requestedId >= 0 ? requestedId : 0;
+    const lastEventId = request.headers['last-event-id'];
+    const requestedId = Number(lastEventId);
+    // A new browser receives the current state from /bootstrap and subscribes
+    // only to future events. A reconnect supplies Last-Event-ID and replays
+    // genuinely missed events from the bounded broker history.
+    const afterId = lastEventId === undefined
+      ? eventBroker.latestEventId()
+      : Number.isSafeInteger(requestedId) && requestedId >= 0 ? requestedId : eventBroker.latestEventId();
     reply.hijack();
     let closed = false;
+    let backpressured = false;
     reply.raw.once('close', () => { closed = true; });
+    reply.raw.on('drain', () => { backpressured = false; });
     // A disconnect can occur while the broker is replaying buffered events.
     // Keep that normal race from becoming an unhandled process-level error.
     reply.raw.on('error', () => { closed = true; });
@@ -98,8 +106,14 @@ export function buildApp(options: AppOptions): FastifyInstance {
     reply.raw.flushHeaders();
     const connection: SseConnection = {
       write: (chunk) => {
-        if (closed || reply.raw.destroyed || reply.raw.writableEnded || reply.raw.writableFinished) return false;
-        try { return reply.raw.write(chunk); } catch { return false; }
+        if (closed || backpressured || reply.raw.destroyed || reply.raw.writableEnded || reply.raw.writableFinished) return false;
+        try {
+          // false means the chunk was accepted but the writable buffer is now
+          // full; wait for drain before accepting another event instead of
+          // incorrectly treating this first backpressure signal as a drop.
+          backpressured = !reply.raw.write(chunk);
+          return true;
+        } catch { return false; }
       },
       end: () => { if (!closed && !reply.raw.writableEnded && !reply.raw.writableFinished) reply.raw.end(); },
       onClose: (handler) => { reply.raw.once('close', handler); reply.raw.once('error', handler); },

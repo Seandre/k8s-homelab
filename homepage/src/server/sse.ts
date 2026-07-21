@@ -51,6 +51,10 @@ export class BootstrapEventBroker {
     return this.subscribers.size;
   }
 
+  latestEventId() {
+    return this.nextId - 1;
+  }
+
   private writeEvent(connection: SseConnection, event: BootstrapEvent): boolean {
     let accepted = false;
     try { accepted = connection.write(`id: ${event.id}\nevent: bootstrap\ndata: ${JSON.stringify(event.data)}\n\n`); } catch { accepted = false; }
