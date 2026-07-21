@@ -2,7 +2,7 @@ import React from 'react';
 import { useMemo, useState } from 'react';
 import { ComponentGallery, Metric, Panel, StateBadge } from './components.js';
 import { healthyBootstrapFixture } from '../shared/fixtures.js';
-import { buildOverviewModel } from './overview.js';
+import { buildOverviewModel, servicePanelSeverity } from './overview.js';
 import { ProxmoxPanel } from './proxmox.js';
 import type { Bootstrap } from '../shared/contracts.js';
 
@@ -15,6 +15,10 @@ function byteCount(value: number | null) {
   return `${(value / (1024 ** index)).toFixed(index === 0 ? 0 : 1)} ${units[index]}`;
 }
 
+function serviceSeverity(status: Bootstrap['services'][number]['status']) {
+  return status === 'DOWN' ? 'CRIT' as const : status === 'DEGRADED' ? 'WARN' as const : 'OK' as const;
+}
+
 export function OverviewScreen({ search, bootstrap = healthyBootstrapFixture }: { search: string; bootstrap?: Bootstrap }) {
   const [expandedHosts, setExpandedHosts] = useState<string[]>([]);
   const toggleExpandedHost = (hostId: string) => setExpandedHosts((current) => current.includes(hostId) ? current.filter((id) => id !== hostId) : [...current, hostId]);
@@ -23,6 +27,7 @@ export function OverviewScreen({ search, bootstrap = healthyBootstrapFixture }: 
   const primaryCluster = overview.k3s!;
   const futureOkd = overview.futureOkd!;
   const filteredServices = useMemo(() => overview.services.filter((service) => `${service.name} ${service.group} ${service.description}`.toLowerCase().includes(search.toLowerCase())).slice(0, 6), [overview.services, search]);
+  const servicesSeverity = servicePanelSeverity(overview.services);
   const alert = overview.alerts[0];
   return (
     <>
@@ -31,7 +36,7 @@ export function OverviewScreen({ search, bootstrap = healthyBootstrapFixture }: 
         {alert ? <section className="alert-strip" aria-label="Active alerts"><StateBadge severity={alert.severity} /><strong>{overview.alerts.length} active alert{overview.alerts.length === 1 ? '' : 's'}</strong><span>{alert.summary}</span><a href="/kubernetes">View Kubernetes ↗</a></section> : null}
         <div className="pve-overview">
           {overview.proxmoxHosts.map((host) => <ProxmoxPanel key={host.id} host={host} timeSeries={data.timeSeries} expanded={expandedHosts.includes(host.id)} onExpand={() => toggleExpandedHost(host.id)} />)}
-          <Panel className="process-box" title="Services" eyebrow="PROCESS / REACHABILITY" severity="WARN"><div className="service-columns" aria-hidden="true"><span>SERVICE</span><span>SOURCE</span><span>STATE</span></div><div className="service-list">{filteredServices.map((service) => <a href={service.href} target="_blank" rel="noreferrer" key={service.id}><strong>{service.name}</strong><small>{service.metadata.source.replace('fixture-', '')}</small><StateBadge severity={service.metadata.severity} label={service.status} /></a>)}</div>{filteredServices.length === 0 ? <div className="empty-state">No local matches. Try a different search.</div> : null}</Panel>
+          <Panel className="process-box" title="Services" eyebrow="PROCESS / REACHABILITY" severity={servicesSeverity}><div className="service-columns" aria-hidden="true"><span>SERVICE</span><span>SOURCE</span><span>STATE</span></div><div className="service-list">{filteredServices.map((service) => <a href={service.href} target="_blank" rel="noreferrer" key={service.id}><strong>{service.name}</strong><small>{service.metadata.source.replace('fixture-', '')}</small><StateBadge severity={serviceSeverity(service.status)} label={service.status} /></a>)}</div>{filteredServices.length === 0 ? <div className="empty-state">No local matches. Try a different search.</div> : null}</Panel>
           <div className="pve-workload-row">
             <Panel className="network-box" title="UDM Pro" eyebrow="NETWORK / UNPOLLER" severity={overview.network.udm.metadata.severity} freshness={overview.network.udm.metadata.freshness} href="https://unifi.ui.com"><div className="metric-grid"><Metric label="STATUS" value={overview.network.unifi.status ?? '—'} /><Metric label="WAN LATENCY" value={overview.network.udm.latencyMs === null ? '—' : Math.round(overview.network.udm.latencyMs)} unit="ms" /><Metric label="CLIENTS" value={overview.network.udm.clientCount ?? '—'} /></div><div className="metric-grid"><Metric label="WAN DOWN" value={oneDecimal(overview.network.udm.wanDownloadMbps)} unit="Mb/s" /><Metric label="WAN UP" value={oneDecimal(overview.network.udm.wanUploadMbps)} unit="Mb/s" /><Metric label="TOTAL TRANSFER" value={byteCount(overview.network.udm.wanTotalBytes)} /></div><div className="metric-grid"><Metric label="CPU" value={oneDecimal(overview.network.udm.cpuPercent)} unit="%" /><Metric label="MEMORY" value={oneDecimal(overview.network.udm.memoryPercent)} unit="%" /><Metric label="TEMP" value={oneDecimal(overview.network.udm.temperatureCelsius)} unit="°C" /><Metric label="UPTIME" value={uptimeDays(overview.network.udm.uptimeSeconds)} /></div></Panel>
             <Panel className="workload-box" title="Kubernetes" eyebrow="WORKLOAD / k3s" severity={primaryCluster.metadata.severity} freshness={primaryCluster.metadata.freshness} href="https://argocd.lab.seandre.dev"><div className="metric-grid"><Metric label="NODES" value={`${primaryCluster.readyNodeCount ?? '—'} / ${primaryCluster.nodeCount ?? '—'}`} /><Metric label="WORKLOADS" value={primaryCluster.workloadCount ?? '—'} /><Metric label="ALERTS" value={overview.alerts.length} /></div><div className="metric-grid"><Metric label="CPU" value={primaryCluster.cpuUsedCores?.toFixed(1) ?? '—'} unit={primaryCluster.cpuCapacityCores === null ? '' : ` / ${primaryCluster.cpuCapacityCores.toFixed(1)} cores`} /><Metric label="MEM" value={primaryCluster.memoryUsedBytes === null ? '—' : `${(primaryCluster.memoryUsedBytes / (1024 ** 3)).toFixed(1)} GiB`} unit={primaryCluster.memoryCapacityBytes === null ? '' : ` / ${(primaryCluster.memoryCapacityBytes / (1024 ** 3)).toFixed(1)} GiB`} /></div></Panel>
