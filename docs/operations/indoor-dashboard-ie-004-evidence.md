@@ -2,10 +2,10 @@
 
 Date: 2026-07-21
 
-Result: **LIVE WITH TWO ACCEPTANCE ITEMS PENDING**. The foundation is deployed
-from `main`, Argo is healthy, and pod-replacement persistence is proven. Private
-split DNS and a literal prior-image rollback remain outstanding as described
-below.
+Result: **LIVE; PRIOR-IMAGE PROOF PENDING**. The foundation is deployed from
+`main`, Argo is healthy, pod-replacement persistence is proven, and the owner
+confirmed the canonical private onboarding page is reachable. A literal
+prior-image rollback remains outstanding as described below.
 
 ## Fixed deployment contract
 
@@ -65,9 +65,8 @@ used by the ingress NetworkPolicy.
 - `home-assistant-tls` is Ready, its ACME order is valid, and a strict-TLS
   request forced through ingress VIP `192.168.40.30` returned HTTP 302 to the
   onboarding flow with certificate verification result 0.
-- `ha.lab.seandre.dev` does not yet resolve through private split DNS. Add a
-  UniFi CNAME to `ingress.lab.seandre.dev` (or an A record to
-  `192.168.40.30`) before calling onboarding reachable by canonical name.
+- On 2026-07-21 the owner confirmed the starting/onboarding page is reachable
+  at the canonical private name `https://ha.lab.seandre.dev`.
 - Git-based prior-image rollback and forward recovery remain pending.
 
 No previous accepted production Home Assistant image exists before IE-004. The
