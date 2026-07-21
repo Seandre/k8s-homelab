@@ -6,3 +6,4 @@ resources:
   - ../../../apps/homepage-custom-preview
   - ../../../apps/kosync
   - ../../../apps/homelab-docs
+  - ../../../apps/home-assistant
