@@ -19,6 +19,7 @@ concurrency:
 env:
   IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/k8s-homelab-home-assistant
   VERIFY_IMAGE: homelab/home-assistant:ie003-verify
+  HOME_ASSISTANT_BASE: ghcr.io/home-assistant/home-assistant:2026.7.2@sha256:1476924357b46e80735c13e94232ba5c853cac052e9df4bb28d50fa56348097b
 
 jobs:
   verify:
@@ -46,6 +47,7 @@ jobs:
             home-assistant/image/*.sh
           python3 -m py_compile \
             home-assistant/coway-compat/tests/test_compatibility.py
+          home-assistant/image/test-vulnerability-policy.sh
 
       - uses: docker/setup-buildx-action@v3
 
@@ -65,13 +67,44 @@ jobs:
             --entrypoint /usr/local/bin/verify-home-assistant-image \
             "${VERIFY_IMAGE}"
 
+      - name: Scan pinned official base
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: ${{ env.HOME_ASSISTANT_BASE }}
+          scanners: vuln
+          severity: HIGH,CRITICAL
+          format: json
+          output: ${{ runner.temp }}/trivy-base.json
+          exit-code: '0'
+          ignore-unfixed: true
+
       - name: Scan production image
         uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: ${{ env.VERIFY_IMAGE }}
+          scanners: vuln
           severity: HIGH,CRITICAL
-          exit-code: '1'
+          format: json
+          output: ${{ runner.temp }}/trivy-image.json
+          exit-code: '0'
           ignore-unfixed: true
+
+      - name: Reject vulnerabilities introduced by the derived image
+        run: |
+          home-assistant/image/compare-vulnerabilities.sh \
+            "${RUNNER_TEMP}/trivy-base.json" \
+            "${RUNNER_TEMP}/trivy-image.json"
+
+      - name: Preserve vulnerability reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: home-assistant-trivy-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/trivy-base.json
+            ${{ runner.temp }}/trivy-image.json
+          if-no-files-found: error
+          retention-days: 30
 
   publish:
     needs: verify

@@ -36,7 +36,10 @@ docker run --rm --entrypoint /usr/local/bin/verify-home-assistant-image \
 
 The generated context and downloaded archive are temporary and must not be
 committed. CI repeats source verification, HA configuration validation, Coway
-import/config-flow/entity tests, the image build, and a Trivy HIGH/CRITICAL scan.
+import/config-flow/entity tests, the image build, and Trivy HIGH/CRITICAL scans
+of both the pinned official base and derived image. CI preserves both reports
+and blocks any finding introduced by the derived image. Inherited official-base
+findings remain visible and are re-evaluated whenever the HA digest changes.
 Main-branch builds publish only `sha-<full-git-sha>` to
 `ghcr.io/<repository-owner>/k8s-homelab-home-assistant`, with BuildKit SBOM and
 maximum-mode provenance attestations. No `latest` or mutable release tag is

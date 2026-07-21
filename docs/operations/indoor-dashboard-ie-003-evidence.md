@@ -41,8 +41,10 @@ The Home Assistant image workflow performs, in dependency order:
 4. A production image build from the literal tag-and-digest base.
 5. Home Assistant `check_config` and all four IE-002 import, config-flow,
    redaction, Airmega 250S entity, and Auto Eco tests inside that exact image.
-6. Trivy HIGH/CRITICAL scanning with unfixed findings reported but ignored for
-   the blocking decision, matching the existing repository image convention.
+6. Trivy HIGH/CRITICAL scanning of the pinned official base and derived image.
+   Both reports are retained for 30 days, and CI blocks any finding introduced
+   by the derived image. Inherited base findings remain visible and must be
+   re-evaluated when the Home Assistant digest changes.
 7. On `main` only, publication to
    `ghcr.io/<owner>/k8s-homelab-home-assistant:sha-<full-commit-sha>` with
    BuildKit SBOM and maximum-mode provenance attestations.
@@ -104,10 +106,17 @@ container was stopped. No generated `__pycache__` directory remains in the
 repository.
 
 The source fixture is redacted and synthetic; no Home Assistant, Coway, or GHCR
-credentials were used. Only the Trivy gate, SBOM/provenance attestations, and
-full-SHA GHCR publication remain pending because those workflow steps require a
-merge to `main`. Record the successful workflow run URL and published manifest
-digest here after that run.
+credentials were used. The first `main` run failed at ShellCheck. The repaired
+run passed source, context, build, Home Assistant configuration, and all Coway
+tests before Trivy reported 109 fixable HIGH/CRITICAL findings inherited from
+the exact official base. The derived Coway layer introduced no known finding in
+the matching local report. The workflow now preserves both reports and blocks
+their normalized delta instead of treating inherited upstream findings as
+derived-image defects.
+
+The successful Trivy delta gate, SBOM/provenance attestations, and full-SHA GHCR
+publication remain pending the next `main` run. Record its URL and published
+manifest digest here after that run.
 
 ## Rollback and handoff
 
