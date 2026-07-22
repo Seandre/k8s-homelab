@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "device_alias": "nest_living_room",
+  "display_name": "Living Room Nest",
+  "room": "living_room",
+  "dependency": "NEST_CLOUD",
+  "integration": "nest",
+  "api": "SMART_DEVICE_MANAGEMENT",
+  "readings": {
+    "current_temperature": {
+      "alias": "nest_living_room.current_temperature",
+      "normalized_unit": "FAHRENHEIT"
+    },
+    "humidity": {
+      "alias": "nest_living_room.humidity",
+      "normalized_unit": "PERCENT"
+    }
+  },
+  "state": {
+    "hvac_mode": "nest_living_room.hvac_mode",
+    "heat_setpoint": "nest_living_room.heat_setpoint",
+    "cool_setpoint": "nest_living_room.cool_setpoint",
+    "fan_timer": "nest_living_room.fan_timer"
+  },
+  "capabilities": {
+    "hvac_modes": {
+      "supported": false,
+      "options": []
+    },
+    "setpoint_shapes": [],
+    "setpoint_min_f": null,
+    "setpoint_max_f": null,
+    "setpoint_step_f": null,
+    "fan_timer_minutes": {
+      "supported": false,
+      "values": []
+    }
+  },
+  "allowed_hvac_modes": ["OFF", "HEAT", "COOL", "HEAT_COOL"],
+  "allowed_setpoint_shapes": ["HEAT", "COOL", "RANGE"],
+  "source_states": ["AVAILABLE", "DEGRADED", "UNAVAILABLE"],
+  "value_states": ["CURRENT", "STALE", "NO_DATA", "NOT_SUPPORTED", "UNAVAILABLE"],
+  "unavailable_value": null
+}
