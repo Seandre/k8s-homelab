@@ -2,10 +2,10 @@
 
 Date: 2026-07-21
 
-Result: **OWNER GATE PENDING**. IE-005 is complete. Home Assistant has one
-configured ESPHome integration and one Bluetooth integration, but zero
-configured Aranet integrations. The signed-in discovery card could not be
-inspected through an available automation surface, so discovery is not claimed.
+Result: **LIVE; FINAL ACCEPTANCE PENDING**. IE-005 is complete. The owner
+confirmed firmware `2.0.15` and enabled Smart Home Integration. Home Assistant
+has the official Aranet integration configured for the Living Room device and
+all five required readings are present.
 
 ## Repository contract
 
@@ -26,19 +26,34 @@ home-assistant/k3s/test-manifests.sh
 git diff --check
 ```
 
-The live integration-domain count was read inside the HA pod and reduced to
-domain counts before output. No integration data, Bluetooth address, serial,
-vendor identifier, raw entity ID, or secret was read into evidence.
+The live integration and entity registries were reduced to domain counts and
+generic sensor names before output. Temperature, humidity, pressure, CO2, and
+battery returned plausible values with the expected source units. CO2 and
+pressure produced multiple advancing steady-state recorder timestamps; sensors
+whose value did not change did not create a new recorder row.
+
+With only the Atom powered off, its address stopped responding and TCP 6053
+closed. Aranet reports stopped; after more than two minutes HA still retained
+the last numeric state. The normalized contract therefore classifies readings
+past its freshness bound as `STALE` and emits `null` for the current value rather
+than treating HA's cached number as current. After Atom power was restored, its
+address and TCP 6053 returned without an HA restart and CO2 produced a new local
+report.
+
+A scoped Internet-loss attempt removed the public-HTTPS NetworkPolicy egress
+rule while retaining DNS and the Atom `/32:6053` rule. Explicit public IPv4
+connections remained reachable, so the attempt did not prove Internet loss and
+is not acceptance evidence. The exact Git-owned policy was restored and Argo
+self-heal was re-enabled. Only one policy selects the non-host-networked HA pod;
+cluster NetworkPolicy enforcement requires separate diagnosis before this test
+can pass.
 
 ## Remaining acceptance evidence
 
-- Owner confirms firmware `>=1.2.0` and Smart Home Integration enabled.
-- HA discovery/configuration and Living Room assignment.
-- Three advancing samples for temperature, humidity, pressure, CO2, and battery.
-- Measured source cadence and freshness/loss/recovery bounds.
+- Three observable report timestamps for every required sensor, including
+  unchanged values, or an authenticated state view that exposes `last_reported`.
+- Final measured freshness and loss/recovery bounds for the normalized adapter.
 - Continued updates with Internet blocked.
-- Atom-loss stale/unavailable state with no fabricated current values.
-- Automatic recovery after Atom power restoration.
 
 Rollback removes only the Aranet HA entry/private mapping and this IE-006
 repository change. The working ESPHome proxy and narrow network rules remain.

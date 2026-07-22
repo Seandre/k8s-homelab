@@ -1,7 +1,9 @@
 # Living Room Aranet4
 
-Status: **owner gate pending**. The local Atom/ESPHome Bluetooth path is healthy,
-but Home Assistant has no configured Aranet integration yet. Do not record a
+Status: **live; final acceptance pending**. Firmware `2.0.15`, Smart Home
+Integration, official HA onboarding, all five sensors, and Atom-loss/recovery
+behavior are verified. Internet-loss proof and complete unchanged-value cadence
+evidence remain. Do not record a
 Bluetooth address, serial number, vendor ID, or raw Home Assistant entity ID in
 Git, screenshots, fixtures, logs, or handoff notes.
 
@@ -41,7 +43,7 @@ On the approved phone, with the Aranet nearby:
 4. Report only the firmware version and that the toggle is enabled. Do not send
    a device details screenshot or any hardware identifier.
 
-Stop here until the owner confirms both facts.
+The owner completed this gate on 2026-07-21 with firmware `2.0.15`.
 
 ## Home Assistant onboarding after the gate
 
