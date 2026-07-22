@@ -24,9 +24,12 @@ grep -Fq 'port: 443' "$app_output"
 grep -Fq 'port: 53' "$app_output"
 grep -Fq 'port: 8123' "$app_output"
 
-# IE-004 must not pre-authorize later Atom, Prometheus, or Homepage paths.
-if grep -Eq 'port: 6053|port: 9090|namespace: monitoring|namespace: homepage' "$app_output"; then
-  echo 'IE-004 render contains a deferred network path' >&2
+# IE-005 adds only the confirmed Atom /32. Prometheus and Homepage remain
+# deferred, and an IoT subnet-wide route remains forbidden.
+grep -Fq 'cidr: 192.168.30.239/32' "$app_output"
+grep -Fq 'port: 6053' "$app_output"
+if grep -Eq 'cidr: 192\.168\.30\.0/24|port: 9090|namespace: monitoring|namespace: homepage' "$app_output"; then
+  echo 'Home Assistant render contains a deferred or overly broad network path' >&2
   exit 1
 fi
 
@@ -39,4 +42,3 @@ if rg -n -i '(password|access[_-]?token|client[_-]?secret):[[:space:]]+[^|]' \
 fi
 
 echo 'IE-004 manifest contract: PASS'
-

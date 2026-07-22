@@ -1,15 +1,15 @@
 # Living Room AtomS3 Lite Bluetooth Proxy
 
-Status: **prepared; owner gate required**. Do not add a Kubernetes or UniFi
-exception until the device has a stable IoT reservation and its initial USB
-flash succeeds.
+Status: **flashed; network validation in progress**. The owner reserved
+`192.168.30.239`; the Kubernetes exception is fixed to that `/32`. The matching
+UniFi rule and negative cross-VLAN tests remain required.
 
 ## Fixed contract
 
 - Infrastructure alias `atom_living_room`; ESPHome name `atom-living-room`.
 - M5Stack AtomS3 Lite (ESP32-S3 with 8 MB flash), with four WS2812 status pixels
   on GPIO35, matching the [ESPHome Devices hardware reference](https://devices.esphome.io/devices/m5stack-atoms3-lite/).
-- IoT VLAN 30 (`192.168.30.0/24`). The owner selects a UniFi DHCP reservation.
+- IoT VLAN 30 (`192.168.30.0/24`); reserved address `192.168.30.239`.
   Git must never contain the MAC, serial, API key, credentials, or reservation ID.
 - Encrypted ESPHome API on TCP 6053 and separately password-protected OTA. There
   is no web server, captive portal, fallback AP, or unauthenticated API.
@@ -22,7 +22,7 @@ Build and flash only with ESPHome `2026.7.0`, pinned to this container index:
 ghcr.io/esphome/esphome:2026.7.0@sha256:959ef36e5ea97c8309429f0ba1405ddb2eead19019b81e6e9518e683dff5191c
 ```
 
-## Owner gate: reservation, secrets, and USB flash
+## Completed owner gate: reservation, secrets, and USB flash
 
 Perform these steps on the approved MacBook; secrets remain outside Git.
 
@@ -68,9 +68,9 @@ Add exactly two coordinated allow rules; do not permit subnet-wide access:
    `.22`, and `.23` to the Atom's one reserved IPv4 address, TCP destination port
    6053. Permit only stateful responses in reverse. Do not add ICMP, UDP, another
    port, the Servers subnet, or the IoT subnet.
-2. In the Home Assistant Kubernetes NetworkPolicy, add one egress item with a
-   `/32` `ipBlock` for that same address and TCP port 6053. Preserve current DNS
-   and public-HTTPS entries.
+2. The Home Assistant Kubernetes NetworkPolicy contains one egress item for
+   `192.168.30.239/32` on TCP 6053. Preserve its current DNS and public-HTTPS
+   entries.
 
 Verify all of the following:
 

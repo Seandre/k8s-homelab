@@ -2,9 +2,11 @@
 
 Date: 2026-07-21
 
-Result: **PREPARED; OWNER GATE REQUIRED**. Secret-free configuration, immutable
-build/flash steps, reservation contract, narrow path design, tests, and rollback
-are complete. No secret was created, hardware flashed, or firewall changed.
+Result: **FLASHED; NETWORK ACCEPTANCE PENDING**. The owner gate completed on
+2026-07-21: the firmware compiled, the full USB write reached 100%, its hash
+verified, and the Atom reset successfully. Its reserved IoT address is
+`192.168.30.239`. The exact Kubernetes `/32:6053` egress is implemented; the
+matching UniFi rule and live positive/negative tests remain pending.
 
 ## Changed files
 
@@ -29,11 +31,10 @@ home-assistant/esphome/test-config.sh
 git diff --check
 ```
 
-Live acceptance requires owner-supplied secrets, USB flash, placement, and the
-confirmed reservation. Then add and test the paired Kubernetes/UniFi exceptions
-exactly as documented. IE-006 remains blocked until discovery, reboot/OTA
-recovery, and negative firewall tests pass.
+The local secrets file is mode 0600 and Git-ignored. No credential, hardware
+identifier, or generated key is recorded here. IE-006 remains blocked until the
+paired UniFi exception, encrypted HA discovery, reboot/OTA recovery, and
+negative firewall tests pass.
 
 Before live rules, rollback is a repository revert. After activation, remove the
 Kubernetes `/32:6053` egress first and its UniFi allow second; retain broad denies.
-

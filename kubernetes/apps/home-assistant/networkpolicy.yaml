@@ -48,4 +48,12 @@ spec:
       ports:
         - protocol: TCP
           port: 443
-
+    # IE-005: the owner-reserved Living Room AtomS3 Lite only. UniFi retains
+    # the matching node-to-IoT allow for 192.168.40.21-23 and blocks all other
+    # Servers-to-IoT traffic.
+    - to:
+        - ipBlock:
+            cidr: 192.168.30.239/32
+      ports:
+        - protocol: TCP
+          port: 6053

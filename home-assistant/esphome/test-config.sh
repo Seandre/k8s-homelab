@@ -20,9 +20,11 @@ for key in atom_wifi_ssid atom_wifi_password atom_api_encryption_key atom_ota_pa
   ! grep -q "^${key}:" "$config"
 done
 
-# The owner-confirmed /32 and port must not be added before the hardware gate.
-! grep -q '6053' "$policy"
+# The post-flash route is exactly the owner-confirmed Atom /32 and native API
+# port. It must never become an IoT subnet-wide exception.
+grep -q 'cidr: 192\.168\.30\.239/32' "$policy"
+grep -q 'port: 6053' "$policy"
+! grep -Eq 'cidr: 192\.168\.30\.0/24|cidr: 192\.168\.30\.0/23' "$policy"
 ! grep -Eq '192\.168\.30\.[0-9]+' "$config" "$example"
 
 echo "IE-005 configuration contract: PASS"
-
