@@ -80,6 +80,8 @@ export default defineConfig({
           {text: '03 · Stable Admin Credentials', link: '/operations/stable-admin-credentials'},
           {text: '04 · Proxmox Public TLS', link: '/operations/proxmox-public-tls'},
           {text: '05 · Proxmox Backup Server', link: '/operations/proxmox-backup-server'},
+          {text: '06 · Home Assistant on k3s', link: '/operations/home-assistant-k3s'},
+          {text: '07 · AtomS3 Lite Bluetooth Proxy', link: '/operations/atom-living-room-ble-proxy'},
         ],
       },
     ],
