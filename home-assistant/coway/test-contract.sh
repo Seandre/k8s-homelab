@@ -4,6 +4,7 @@ set -eu
 repository_root=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
 contract="$repository_root/home-assistant/coway/contract.json"
 fixture="$repository_root/home-assistant/coway/fixtures/capabilities.pending.json"
+live_fixture="$repository_root/home-assistant/coway/fixtures/capabilities.live.json"
 baseline="$repository_root/docs/overview/indoor-dashboard-baseline.md"
 runbook="$repository_root/docs/operations/coway-live-onboarding.md"
 evidence="$repository_root/docs/operations/indoor-dashboard-ie-008-evidence.md"
@@ -19,7 +20,19 @@ jq -e '
   .control_alias_suffixes == ["power","speed","preset","timer","light","button_lock","sensitivity"] and
   .upstream_candidate_values.speed_percent == [33,66,100] and
   (.upstream_candidate_values.preset | index("AUTO_ECO") | not) and
-  ([.live_capabilities[]] | all(.observed == false and .readings == [] and .controls == {} and .disabled == [])) and
+  ([.live_capabilities[]] | all(
+    .observed == true and
+    .readings == ["aqi","pm25","pm10","filter_life"] and
+    .filter_life == {"strategy":"MINIMUM","sources":["pre_filter","max2_filter"]} and
+    .controls.power == [false,true] and
+    .controls.speed == [1,2,3] and
+    .controls.preset == ["AUTO","NIGHT","RAPID"] and
+    .controls.timer_minutes == [0,60,120,240,480] and
+    .controls.light == ["ON","OFF","AQI_OFF"] and
+    .controls.button_lock == [false,true] and
+    .controls.sensitivity == ["SENSITIVE","NORMAL","INSENSITIVE"] and
+    .disabled == []
+  )) and
   .unavailable_value == null
 ' "$contract" >/dev/null
 
@@ -32,17 +45,35 @@ jq -e '
   ))
 ' "$fixture" >/dev/null
 
+jq -e '
+  .fixture == "coway_live_capabilities" and
+  (.devices | keys == ["coway_bedroom", "coway_living_room"]) and
+  ([.devices[]] | all(
+    .source_state == "AVAILABLE" and .observed == true and
+    .readings == ["aqi","pm25","pm10","filter_life"] and
+    .filter_life_strategy == "MINIMUM" and
+    .controls.power == [false,true] and
+    .controls.speed == [1,2,3] and
+    .controls.preset == ["AUTO","NIGHT","RAPID"] and
+    .controls.timer_minutes == [0,60,120,240,480] and
+    .controls.light == ["ON","OFF","AQI_OFF"] and
+    .controls.button_lock == [false,true] and
+    .controls.sensitivity == ["SENSITIVE","NORMAL","INSENSITIVE"] and
+    .disabled == []
+  ))
+' "$live_fixture" >/dev/null
+
 for device in coway_living_room coway_bedroom; do
   grep -Fq "$device" "$baseline"
 done
 grep -Fq '## Owner gate' "$runbook"
 grep -Fq 'Auto (Eco)' "$runbook"
 grep -Fq 'exactly one purifier at a time' "$runbook"
-grep -Fq 'PREPARED; OWNER CREDENTIAL GATE PENDING' "$evidence"
+grep -Fq 'LIVE; CLOUD-LOSS ACCEPTANCE PENDING' "$evidence"
 
 if rg -n -i \
   '(password|username|email|access[_ -]?token|refresh[_ -]?token|device[_ -]?id|serial|mac address|entity_id)[[:space:]]*[:=][[:space:]]*[^[:space:]<{]+' \
-  "$contract" "$fixture" "$runbook" "$evidence"; then
+  "$contract" "$fixture" "$live_fixture" "$runbook" "$evidence"; then
   echo 'Coway package contains a forbidden credential, vendor ID, or raw entity ID assignment' >&2
   exit 1
 fi

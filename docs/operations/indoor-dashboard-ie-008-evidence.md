@@ -2,8 +2,9 @@
 
 Date: 2026-07-21
 
-Result: **PREPARED; OWNER CREDENTIAL GATE PENDING**. IE-002 verified the pinned
-integration and synthetic Airmega 250S entity behavior. IE-004 is live. No
+Result: **LIVE; CLOUD-LOSS ACCEPTANCE PENDING**. IE-002 verified the pinned
+integration and synthetic Airmega 250S entity behavior. The owner completed
+IoCare onboarding, and both physical units passed independently. No
 IoCare credential, account data, vendor/device identifier, or raw Home Assistant
 entity ID was requested or recorded.
 
@@ -20,26 +21,23 @@ entity ID was requested or recorded.
 
 ## Live observations
 
-Live integration presence is recorded only as a redacted count. Capability
-observations remain empty until owner-authorized onboarding and physical tests.
+The account produced one official `coway` config entry and two correctly named,
+room-assigned devices. Both units reported plausible AQI, PM2.5, PM10, pre-filter,
+and MAX2-filter values. Public `filter_life` uses the conservative minimum of
+the two filter percentages.
 
-```text
-iocare_config_entries=0
-iocare_state=not_configured
-```
+Using a temporary owner-created HA token, each unit independently passed power
+off/on, speeds 1–3, Auto/Night/Rapid, timers off/1/2/4/8 hours, light
+on/off/AQI-off, sensitive/normal/insensitive, and lock on/off. Each API call was
+followed by HA state convergence before the next call. Living Room remained
+untouched during Bedroom tests and vice versa. Both were restored to power on,
+speed 2, timer off, AQI light off, normal sensitivity, and unlocked. Auto Eco
+remains report-only and is absent from the control allowlist.
 
-## Required completion evidence
+## Remaining completion evidence
 
-- Owner enters IoCare+ credentials directly into Home Assistant.
-- Both devices are named and assigned to their approved rooms.
-- Each unit independently passes power, speeds 1–3, advertised presets, timer,
-  light, lock, sensitivity, AQI, PM2.5, PM10, and filter-state checks.
-- Absent or unreliable entities are disabled and captured as unsupported.
-- Original physical settings are restored after each unit's tests.
 - Coway cloud loss yields unavailable/null current state without affecting Nest
   or local Aranet readings, followed by fresh recovery.
-- The redacted live capability fixture replaces the pending fixture only after
-  all observations above pass.
 
 Rollback removes only the Coway IoCare Home Assistant entry and its private
 credentials. Repository rollback removes this package's files and does not

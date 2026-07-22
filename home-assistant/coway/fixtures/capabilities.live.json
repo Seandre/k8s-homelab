@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "fixture": "coway_live_capabilities",
+  "devices": {
+    "coway_living_room": {
+      "source_state": "AVAILABLE",
+      "observed": true,
+      "readings": ["aqi", "pm25", "pm10", "filter_life"],
+      "filter_life_strategy": "MINIMUM",
+      "controls": {
+        "power": [false, true],
+        "speed": [1, 2, 3],
+        "preset": ["AUTO", "NIGHT", "RAPID"],
+        "timer_minutes": [0, 60, 120, 240, 480],
+        "light": ["ON", "OFF", "AQI_OFF"],
+        "button_lock": [false, true],
+        "sensitivity": ["SENSITIVE", "NORMAL", "INSENSITIVE"]
+      },
+      "disabled": []
+    },
+    "coway_bedroom": {
+      "source_state": "AVAILABLE",
+      "observed": true,
+      "readings": ["aqi", "pm25", "pm10", "filter_life"],
+      "filter_life_strategy": "MINIMUM",
+      "controls": {
+        "power": [false, true],
+        "speed": [1, 2, 3],
+        "preset": ["AUTO", "NIGHT", "RAPID"],
+        "timer_minutes": [0, 60, 120, 240, 480],
+        "light": ["ON", "OFF", "AQI_OFF"],
+        "button_lock": [false, true],
+        "sensitivity": ["SENSITIVE", "NORMAL", "INSENSITIVE"]
+      },
+      "disabled": []
+    }
+  }
+}

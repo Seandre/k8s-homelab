@@ -1,8 +1,8 @@
 # Coway Airmega 250S live onboarding
 
-Status: **owner credential gate pending**. This runbook narrows the verified
-IE-002 source contract using both physical purifiers. Nothing is supported in
-the public contract until it has been observed on that individual unit.
+Status: **live; cloud-loss acceptance pending**. Both physical purifiers passed
+the independent read/control matrix through Home Assistant's API and were
+restored to their original settings.
 
 ## Fixed identity and safety rules
 
@@ -34,7 +34,7 @@ purifier.
 5. Report only that onboarding completed, or provide a manually redacted error
    that contains no account, device, entity, or credential identifier.
 
-Stop here until the owner completes this gate.
+The owner completed this gate on 2026-07-21.
 
 ## Independent live capability test
 
