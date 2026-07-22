@@ -1,7 +1,11 @@
 # Living Room Nest
 
-Status: **live; cloud-loss acceptance pending**. The official Home Assistant
+Status: **live; stale-state guard pending**. The official Home Assistant
 Nest integration is configured and its live read/control contract is verified.
+Verified Internet loss stopped cloud observations, but raw HA retained cached
+values and required a scoped Nest integration reload to resume. The public
+adapter must null stale current values and the control gateway must reject stale
+state before IE-007 closes.
 Never put a Google Cloud project ID, Device
 Access project ID, OAuth client data, authorization code, token, Google device
 ID, or raw Home Assistant entity ID in Git, chat, screenshots, fixtures, logs,

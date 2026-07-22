@@ -2,7 +2,7 @@
 
 Date: 2026-07-21
 
-Result: **LIVE; CLOUD-LOSS ACCEPTANCE PENDING**. IE-004 is live. The owner
+Result: **LIVE; STALE-STATE GUARD PENDING**. IE-004 is live. The owner
 completed Google Device Access/OAuth/Pub/Sub linking, and the official Nest
 integration is configured as `Living Room Nest` in `Living Room`. No Google
 account, project, OAuth, device, Home Assistant entity, or credential identifier
@@ -43,8 +43,14 @@ nest_state=not_configured
 
 ## Remaining completion evidence
 
-- Cloud-loss transition to unavailable/null current values, independent-source
-  continuity, and fresh recovery without fabricated state.
+During a verified HA Internet outage, Nest stopped updating for more than 23
+minutes while local Aranet continued. Raw HA retained cached climate and sensor
+values instead of becoming unavailable. After access returned, a safe 1°F range
+probe did not converge until the Nest config entry was reloaded; it then
+surfaced, and the thermostat was immediately restored to `heat_cool`, 66–69°F,
+fan off. The downstream freshness guard must reject all commands while stale and
+emit unavailable/null current values. IE-007 remains open until that guard is
+implemented and tested; delayed convergence must be covered by IE-012.
 
 Rollback removes only the official Nest HA entry and authorization/private
 credentials. It must not modify Aranet, ESPHome, Coway, or their network paths.

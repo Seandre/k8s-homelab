@@ -1,8 +1,11 @@
 # Coway Airmega 250S live onboarding
 
-Status: **live; cloud-loss acceptance pending**. Both physical purifiers passed
+Status: **live; stale-state guard pending**. Both physical purifiers passed
 the independent read/control matrix through Home Assistant's API and were
 restored to their original settings.
+Verified cloud loss stopped observations and produced connection errors, but
+raw HA retained cached values. Public reads and controls therefore remain gated
+on a Git-owned freshness guard that emits null and rejects commands while stale.
 
 ## Fixed identity and safety rules
 

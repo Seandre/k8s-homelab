@@ -69,7 +69,7 @@ done
 grep -Fq '## Owner gate' "$runbook"
 grep -Fq 'Auto (Eco)' "$runbook"
 grep -Fq 'exactly one purifier at a time' "$runbook"
-grep -Fq 'LIVE; CLOUD-LOSS ACCEPTANCE PENDING' "$evidence"
+grep -Fq 'LIVE; STALE-STATE GUARD PENDING' "$evidence"
 
 if rg -n -i \
   '(password|username|email|access[_ -]?token|refresh[_ -]?token|device[_ -]?id|serial|mac address|entity_id)[[:space:]]*[:=][[:space:]]*[^[:space:]<{]+' \

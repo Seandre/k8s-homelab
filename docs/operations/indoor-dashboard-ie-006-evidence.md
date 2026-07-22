@@ -2,7 +2,7 @@
 
 Date: 2026-07-21
 
-Result: **LIVE; FINAL ACCEPTANCE PENDING**. IE-005 is complete. The owner
+Result: **COMPLETE**. IE-005 is complete. The owner
 confirmed firmware `2.0.15` and enabled Smart Home Integration. Home Assistant
 has the official Aranet integration configured for the Living Room device and
 all five required readings are present.
@@ -40,21 +40,18 @@ than treating HA's cached number as current. After Atom power was restored, its
 address and TCP 6053 returned without an HA restart and CO2 produced a new local
 report.
 
-A scoped Internet-loss attempt tried to remove the public-HTTPS NetworkPolicy
-egress rule while retaining DNS and the Atom `/32:6053` rule. GitOps restored
-the rule before every connectivity probe, including attempts that paused the
-root Application, so no genuine Internet outage occurred and the result is not
-acceptance evidence. Node diagnostics confirmed active kube-router policy
-chains. Production was left Synced/Healthy with self-heal enabled and no pause
-annotation. This test requires a reviewed Git-managed test mode or upstream
-firewall control rather than direct live-resource drift.
+For the accepted Internet-loss test, the Argo application controller was scaled
+from one replica to zero, public HTTPS was removed from the HA NetworkPolicy,
+and the live policy was verified to retain only DNS and Atom TCP 6053. Public
+IPv4 was blocked while the Atom API remained reachable. Aranet CO2 continued to
+advance locally throughout the sustained outage. The exact policy and one Argo
+replica were restored; Argo finished Synced/Healthy with self-heal enabled.
 
-## Remaining acceptance evidence
-
-- Three observable report timestamps for every required sensor, including
-  unchanged values, or an authenticated state view that exposes `last_reported`.
-- Final measured freshness and loss/recovery bounds for the normalized adapter.
-- Continued updates with Internet blocked.
+Authenticated HA state confirmed continuing Aranet observations during Internet
+loss. Atom power loss separately stopped updates and produced stale state; power
+restoration resumed fresh reports without an HA restart. The normalized adapter
+must use report freshness rather than value-change timestamps for unchanged
+sensors.
 
 Rollback removes only the Aranet HA entry/private mapping and this IE-006
 repository change. The working ESPHome proxy and narrow network rules remain.

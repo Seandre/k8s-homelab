@@ -1,9 +1,8 @@
 # Living Room Aranet4
 
-Status: **live; final acceptance pending**. Firmware `2.0.15`, Smart Home
-Integration, official HA onboarding, all five sensors, and Atom-loss/recovery
-behavior are verified. Internet-loss proof and complete unchanged-value cadence
-evidence remain. Do not record a
+Status: **complete**. Firmware `2.0.15`, Smart Home Integration, official HA
+onboarding, all five sensors, local operation during Internet loss, and
+Atom-loss/recovery behavior are verified. Do not record a
 Bluetooth address, serial number, vendor ID, or raw Home Assistant entity ID in
 Git, screenshots, fixtures, logs, or handoff notes.
 

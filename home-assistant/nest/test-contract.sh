@@ -39,7 +39,7 @@ done
 grep -Fq '## Owner gate' "$runbook"
 grep -Fq 'every current value is' "$runbook"
 grep -Fq 'does not operate equipment automatically' "$runbook"
-grep -Fq 'LIVE; CLOUD-LOSS ACCEPTANCE PENDING' "$evidence"
+grep -Fq 'LIVE; STALE-STATE GUARD PENDING' "$evidence"
 
 if rg -n -i \
   '(project[_ -]?id|client[_ -]?id|client[_ -]?secret|oauth[_ -]?code|refresh[_ -]?token|access[_ -]?token|device[_ -]?id|entity_id)[[:space:]]*[:=][[:space:]]*[0-9a-z_-]+' \

@@ -2,7 +2,7 @@
 
 Date: 2026-07-21
 
-Result: **LIVE; CLOUD-LOSS ACCEPTANCE PENDING**. IE-002 verified the pinned
+Result: **LIVE; STALE-STATE GUARD PENDING**. IE-002 verified the pinned
 integration and synthetic Airmega 250S entity behavior. The owner completed
 IoCare onboarding, and both physical units passed independently. No
 IoCare credential, account data, vendor/device identifier, or raw Home Assistant
@@ -36,8 +36,13 @@ remains report-only and is absent from the control allowlist.
 
 ## Remaining completion evidence
 
-- Coway cloud loss yields unavailable/null current state without affecting Nest
-  or local Aranet readings, followed by fresh recovery.
+During a verified HA Internet outage, Coway logged a real cloud connection
+failure and both devices stopped updating for more than 25 minutes while Aranet
+continued locally. Raw HA retained cached numeric states instead of becoming
+unavailable. After access returned, both PM2.5 readings refreshed successfully
+and every control remained at its restore baseline. The downstream freshness
+guard must emit unavailable/null current values and reject controls while stale
+before IE-008 closes.
 
 Rollback removes only the Coway IoCare Home Assistant entry and its private
 credentials. Repository rollback removes this package's files and does not
