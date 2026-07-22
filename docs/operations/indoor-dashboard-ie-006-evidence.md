@@ -40,13 +40,14 @@ than treating HA's cached number as current. After Atom power was restored, its
 address and TCP 6053 returned without an HA restart and CO2 produced a new local
 report.
 
-A scoped Internet-loss attempt removed the public-HTTPS NetworkPolicy egress
-rule while retaining DNS and the Atom `/32:6053` rule. Explicit public IPv4
-connections remained reachable, so the attempt did not prove Internet loss and
-is not acceptance evidence. The exact Git-owned policy was restored and Argo
-self-heal was re-enabled. Only one policy selects the non-host-networked HA pod;
-cluster NetworkPolicy enforcement requires separate diagnosis before this test
-can pass.
+A scoped Internet-loss attempt tried to remove the public-HTTPS NetworkPolicy
+egress rule while retaining DNS and the Atom `/32:6053` rule. GitOps restored
+the rule before every connectivity probe, including attempts that paused the
+root Application, so no genuine Internet outage occurred and the result is not
+acceptance evidence. Node diagnostics confirmed active kube-router policy
+chains. Production was left Synced/Healthy with self-heal enabled and no pause
+annotation. This test requires a reviewed Git-managed test mode or upstream
+firewall control rather than direct live-resource drift.
 
 ## Remaining acceptance evidence
 
